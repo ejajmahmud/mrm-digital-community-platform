@@ -404,22 +404,7 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
   };
 
   return (
-    <div className="w-full h-full flex flex-col u-canvas relative overflow-hidden select-none">
-      {/* Native iPhone 17 Pro Max Dynamic Island Status Bar (Aligned to bezel.fit cutout) */}
-      <div className="shrink-0 h-[50px] px-7 pt-2 u-surface border-b flex items-center justify-between text-[11px] font-semibold z-30">
-        <div className="w-[105px] flex items-center gap-1.5">
-          <span className="font-mono font-bold text-xs tracking-tight">9:41</span>
-          <span className="text-[9px] font-mono text-emerald-600 font-bold">
-            {locationSnap.zoneCode}
-          </span>
-        </div>
-        {/* Center reserved for Original iPhone 17 Pro Max Dynamic Island */}
-        <div className="flex-1" aria-hidden="true" />
-        <div className="w-[105px] flex items-center justify-end gap-1.5 font-mono text-[10px]">
-          <span className="text-slate-500 font-semibold">5G</span>
-          <span className="text-emerald-600 font-bold">100%</span>
-        </div>
-      </div>
+    <div className="w-full h-full min-h-screen flex flex-col u-canvas relative overflow-hidden select-none">
 
       {/* ===================================================================== */}
       {/* DE-DENSED MOBILE TOP BAR                                              */}
@@ -427,7 +412,7 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
       {/* Right: Islamic Utilities Hub, Pledge Basket, Human Role Icon, Menu    */}
       {/* ===================================================================== */}
       {!isAuthScreen && (
-        <header className="shrink-0 px-3.5 py-2.5 u-surface border-b flex items-center justify-between gap-2 z-30 relative">
+        <header className="shrink-0 px-3.5 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] u-surface border-b flex items-center justify-between gap-2 z-30 relative">
           {/* Left: Real MRM Logo + Brand or Back Navigation */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
             {currentScreen === 'home' ? (
@@ -619,7 +604,7 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
       {!isAuthScreen && (
         <nav
           aria-label="Mobile Bottom Navigation"
-          className="shrink-0 h-[68px] pb-2 px-4 u-surface border-t flex items-center justify-around z-30"
+          className="shrink-0 min-h-[64px] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 px-4 u-surface border-t flex items-center justify-around z-30"
         >
           {[
             { id: 'home' as ScreenId, label: 'Home', icon: Home },

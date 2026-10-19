@@ -1,24 +1,32 @@
 {
-  "name": "MRM Digital Community Platform",
-  "short_name": "MRM Community",
-  "description": "Faith, learning and coordinated community care for all Muslims and reverts.",
+  "name": "MRM Care — Digital Community Platform",
+  "short_name": "MRM Care",
+  "description": "Faith, learning and coordinated community care for Muslims and reverts.",
+  "id": "mrm-digital-community-platform",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#ffffff",
   "theme_color": "#065f46",
-  "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%23065f46'/><circle cx='190' cy='256' r='60' fill='%2310b981'/><circle cx='256' cy='256' r='60' fill='%2314b8a6'/><circle cx='322' cy='256' r='60' fill='%2306b6d4'/></svg>",
+      "src": "./icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='128' fill='%23065f46'/><circle cx='190' cy='256' r='60' fill='%2310b981'/><circle cx='256' cy='256' r='60' fill='%2314b8a6'/><circle cx='322' cy='256' r='60' fill='%2306b6d4'/></svg>",
+      "src": "./icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/maskable-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["lifestyle", "education", "utilities"]
