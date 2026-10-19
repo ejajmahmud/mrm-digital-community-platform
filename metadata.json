@@ -1,0 +1,6 @@
+{
+  "name": "MRM Digital Community Platform",
+  "description": "Unified faith, learning, and coordinated community care platform for Muslims and reverts with mobile app, Islamic utilities, volunteer matching, and operations management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

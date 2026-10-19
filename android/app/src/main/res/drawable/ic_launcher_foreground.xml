@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="168"
+    android:viewportHeight="168">
+    <!-- Left M (Vibrant Cyan-Blue #0095D9) -->
+    <path
+        android:strokeColor="#0095D9"
+        android:strokeWidth="6.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 24 102 L 24 72 C 24 60 32 52 38 48 C 44 52 52 60 52 72 L 52 102" />
+    <path
+        android:strokeColor="#0095D9"
+        android:strokeWidth="6.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 52 102 L 52 72 C 52 60 60 52 66 48 C 72 52 80 60 80 72 L 80 102" />
+    <!-- Center R (Warm Golden-Yellow #F5B82E) -->
+    <path
+        android:strokeColor="#F5B82E"
+        android:strokeWidth="6.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 80 102 L 80 72 C 80 60 88 52 94 48 C 102 53 107 62 104 71 C 102 77 95 81 86 81 L 106 102" />
+    <!-- Right M (Soft Emerald-Mint Green #3EB489) -->
+    <path
+        android:strokeColor="#3EB489"
+        android:strokeWidth="6.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 106 102 L 106 72 C 106 60 114 52 120 48 C 126 52 134 60 134 72 L 134 102" />
+    <path
+        android:strokeColor="#3EB489"
+        android:strokeWidth="6.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M 134 102 L 134 72 C 134 60 142 52 148 48 C 154 52 162 60 162 72 L 162 102" />
+</vector>
