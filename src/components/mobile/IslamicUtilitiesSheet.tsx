@@ -200,6 +200,16 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
   const [translationLang, setTranslationLang] = useState<'en' | 'bm'>('en');
   const [selectedQari, setSelectedQari] = useState<string>('Mishary Rashid Alafasy');
   const [playingAyahKey, setPlayingAyahKey] = useState<string | null>(null);
+  const quranAudioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (quranAudioRef.current) {
+        quranAudioRef.current.pause();
+      }
+    };
+  }, []);
+
   const [bookmarkedAyat, setBookmarkedAyat] = useState<string[]>(() => {
     try {
       const s = localStorage.getItem('mrm_bookmarked_ayat');
@@ -433,16 +443,6 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
       await syncWithCoords(baseSnapshot.lat, baseSnapshot.lng);
     }
   };
-
-  const quranAudioRef = React.useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (quranAudioRef.current) {
-        quranAudioRef.current.pause();
-      }
-    };
-  }, []);
 
   const handlePlayAyahTone = (key: string) => {
     if (playingAyahKey === key) {

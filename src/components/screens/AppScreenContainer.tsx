@@ -640,15 +640,17 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
       )}
 
       {/* MRM 9-Module Islamic Utilities Suite Sheet */}
-      <IslamicUtilitiesSheet
-        isOpen={currentUtilityTab !== null}
-        onClose={() => setUtilityTab(null)}
-        initialTab={currentUtilityTab || 'waqt'}
-        selectedZone={selectedZone}
-        onSelectZone={handleZoneChange}
-        playClickSound={playClickSound}
-        onAddToCart={handleAddToCart}
-      />
+      {currentUtilityTab !== null && (
+        <IslamicUtilitiesSheet
+          isOpen={true}
+          onClose={() => setUtilityTab(null)}
+          initialTab={currentUtilityTab}
+          selectedZone={selectedZone}
+          onSelectZone={handleZoneChange}
+          playClickSound={playClickSound}
+          onAddToCart={handleAddToCart}
+        />
+      )}
 
       {/* Modals */}
       <ScreenNavigatorModal
