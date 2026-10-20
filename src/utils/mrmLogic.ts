@@ -302,17 +302,17 @@ export function format24to12(timeStr: string): string {
   return `${h}:${m} ${ampm}`;
 }
 
-export function getKualaLumpurNow(baseDate: Date = new Date()): Date {
+export function getKualaLumpurTimeParts(baseDate: Date = new Date()) {
   try {
     const formatter = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Asia/Kuala_Lumpur',
+      hourCycle: 'h23',
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
       hour: 'numeric',
       minute: 'numeric',
       second: 'numeric',
-      hour12: false,
     });
     const parts = formatter.formatToParts(baseDate);
     const getVal = (type: string, def: number) => {
@@ -322,15 +322,64 @@ export function getKualaLumpurNow(baseDate: Date = new Date()): Date {
     const year = getVal('year', 2026);
     const month = getVal('month', 10) - 1;
     const day = getVal('day', 20);
-    let hour = getVal('hour', 9);
-    if (hour === 24) hour = 0;
+    const hour = getVal('hour', 0) % 24;
     const minute = getVal('minute', 0);
     const second = getVal('second', 0);
-    return new Date(year, month, day, hour, minute, second);
+
+    const formatted12 = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    }).format(baseDate);
+
+    const formatted12NoSec = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(baseDate);
+
+    return {
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      minutesFromMidnight: hour * 60 + minute,
+      secondsFromMidnight: hour * 3600 + minute * 60 + second,
+      formatted12,
+      formatted12NoSec,
+    };
   } catch {
     const utc = baseDate.getTime() + baseDate.getTimezoneOffset() * 60000;
-    return new Date(utc + 8 * 3600000);
+    const klDate = new Date(utc + 8 * 3600000);
+    const hour = klDate.getHours();
+    const minute = klDate.getMinutes();
+    const second = klDate.getSeconds();
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour % 12 || 12;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return {
+      year: klDate.getFullYear(),
+      month: klDate.getMonth(),
+      day: klDate.getDate(),
+      hour,
+      minute,
+      second,
+      minutesFromMidnight: hour * 60 + minute,
+      secondsFromMidnight: hour * 3600 + minute * 60 + second,
+      formatted12: `${h12}:${pad(minute)}:${pad(second)} ${ampm}`,
+      formatted12NoSec: `${h12}:${pad(minute)} ${ampm}`,
+    };
   }
+}
+
+export function getKualaLumpurNow(baseDate: Date = new Date()): Date {
+  const parts = getKualaLumpurTimeParts(baseDate);
+  return new Date(parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second);
 }
 
 export const JAKIM_WLY01_PRAYERS: PrayerScheduleItem[] = [
@@ -599,12 +648,14 @@ export function getNextPrayerInfo(
   let minutes = currentMinutesFromMidnight;
   let seconds = customSecondsFromMidnight;
   if (minutes === undefined) {
-    const now = new Date();
-    minutes = now.getHours() * 60 + now.getMinutes();
-    seconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+    const klParts = getKualaLumpurTimeParts();
+    minutes = klParts.minutesFromMidnight;
+    seconds = klParts.secondsFromMidnight;
   }
   const normalizedMinutes = ((minutes % 1440) + 1440) % 1440;
-  const upcoming = prayers.find((p) => p.minutesFromMidnight > normalizedMinutes);
+  // Strictly filter out Syuruk: Sunrise is an astronomical marker (no prayer)
+  const farzPrayers = prayers.filter((p) => p.id !== 'syuruk');
+  const upcoming = farzPrayers.find((p) => p.minutesFromMidnight > normalizedMinutes);
 
   const calculateCountdown = (prayerMinutes: number) => {
     let diffSec: number;
@@ -620,9 +671,14 @@ export function getNextPrayerInfo(
     const mins = Math.floor((diffSec % 3600) / 60);
     const secs = diffSec % 60;
     let label = '';
-    if (hrs > 0) label = `${hrs}h ${mins}m ${secs}s`;
-    else if (mins > 0) label = `${mins}m ${secs}s`;
-    else label = `${secs}s`;
+    if (seconds !== undefined) {
+      if (hrs > 0) label = `${hrs}h ${mins}m ${secs}s`;
+      else if (mins > 0) label = `${mins}m ${secs}s`;
+      else label = `${secs}s`;
+    } else {
+      if (hrs > 0) label = `${hrs}h ${mins}m`;
+      else label = `${mins} mins`;
+    }
     return { diffMin: Math.ceil(diffSec / 60), label };
   };
 
@@ -635,8 +691,8 @@ export function getNextPrayerInfo(
     };
   }
 
-  // Wrap around to next day's Subuh
-  const firstPrayer = prayers[0];
+  // Wrap around to next day's Subuh (first farz prayer)
+  const firstPrayer = farzPrayers[0];
   const { diffMin, label } = calculateCountdown(firstPrayer.minutesFromMidnight);
   return {
     nextPrayer: firstPrayer,
@@ -793,15 +849,15 @@ export function getLocationSyncSnapshot(
   const activeLng = customCoords?.lng ?? resolvedZone.lng;
 
   // Default time to Kuala Lumpur, Malaysia (Asia/Kuala_Lumpur, UTC+8)
-  const klNow = getKualaLumpurNow();
+  const klParts = getKualaLumpurTimeParts();
   const effectiveMinutes =
     customMinutesFromMidnight !== undefined
       ? customMinutesFromMidnight
-      : klNow.getHours() * 60 + klNow.getMinutes();
+      : klParts.minutesFromMidnight;
   const effectiveSeconds =
     customSecondsFromMidnight !== undefined
       ? customSecondsFromMidnight
-      : klNow.getHours() * 3600 + klNow.getMinutes() * 60 + klNow.getSeconds();
+      : klParts.secondsFromMidnight;
 
   const prayers = getPrayersForZone(resolvedZone.code);
   const almanac = getWaqtAndForbiddenSchedule(resolvedZone.code, prayers);

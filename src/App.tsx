@@ -162,10 +162,10 @@ export default function App() {
   return (
     <div
       data-theme={theme}
-      className="min-h-screen w-full bg-slate-900/95 flex flex-col items-center justify-start antialiased"
+      className="h-[100dvh] w-full bg-slate-900/95 flex flex-col items-center justify-start antialiased overflow-hidden"
     >
       {/* Pure PWA App Shell - 100% width on mobile, centered max-w-md on desktop */}
-      <div className="w-full max-w-md min-h-screen flex-1 flex flex-col bg-white dark:bg-slate-950 shadow-2xl relative">
+      <div className="w-full max-w-md h-full flex flex-col bg-white dark:bg-slate-950 shadow-2xl relative overflow-hidden">
         {/* PWA One-Click Install Banner (if installable on device) */}
         {showInstallBanner && (
           <aside

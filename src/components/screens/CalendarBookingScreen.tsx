@@ -202,7 +202,7 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
   };
 
   return (
-    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-8 select-none space-y-3.5">
+    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-3.5">
       {/* Top Mode Switcher: Halaqa & Shifts vs MRM Waqt & Fasting Almanac */}
       <div className="p-1 rounded-xl u-subtle border border-slate-200/80 grid grid-cols-2 gap-1">
         <button

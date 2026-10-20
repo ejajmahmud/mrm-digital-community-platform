@@ -404,7 +404,7 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
   };
 
   return (
-    <div className="w-full h-full min-h-screen flex flex-col u-canvas relative overflow-hidden select-none">
+    <div className="w-full h-full flex flex-col u-canvas relative overflow-hidden select-none">
 
       {/* ===================================================================== */}
       {/* DE-DENSED MOBILE TOP BAR                                              */}
@@ -600,11 +600,11 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
         {renderCurrentScreen()}
       </div>
 
-      {/* Bottom Docked Navigation Bar (with iPhone 17 Pro Max curved bezel clearance) */}
+      {/* Bottom Fixed Navigation Bar */}
       {!isAuthScreen && (
         <nav
           aria-label="Mobile Bottom Navigation"
-          className="shrink-0 min-h-[64px] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 px-4 u-surface border-t flex items-center justify-around z-30"
+          className="fixed bottom-0 inset-x-0 max-w-md mx-auto z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 min-h-[64px] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 px-4 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
         >
           {[
             { id: 'home' as ScreenId, label: 'Home', icon: Home },

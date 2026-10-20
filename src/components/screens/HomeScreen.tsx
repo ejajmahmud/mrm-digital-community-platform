@@ -34,6 +34,7 @@ import {
   calculateCampaignProgress,
   formatLiveHijriDate,
   getKualaLumpurNow,
+  getKualaLumpurTimeParts,
   format24to12,
 } from '../../utils/mrmLogic';
 import { UtilityTabId } from '../../data/islamicUtilitiesData';
@@ -78,18 +79,19 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Live real-time seconds ticking strictly synced to Kuala Lumpur (MYT, UTC+8)
+  const [klTime, setKlTime] = useState(() => getKualaLumpurTimeParts());
   const [currentTime, setCurrentTime] = useState<Date>(() => getKualaLumpurNow());
 
   useEffect(() => {
     const timer = setInterval(() => {
+      setKlTime(getKualaLumpurTimeParts());
       setCurrentTime(getKualaLumpurNow());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const currentMinutesFromMidnight = currentTime.getHours() * 60 + currentTime.getMinutes();
-  const currentSecondsFromMidnight =
-    currentTime.getHours() * 3600 + currentTime.getMinutes() * 60 + currentTime.getSeconds();
+  const currentMinutesFromMidnight = klTime.minutesFromMidnight;
+  const currentSecondsFromMidnight = klTime.secondsFromMidnight;
 
   const roleMeta: RoleConfig = ROLE_CONFIGS[currentRole] || ROLE_CONFIGS.staff_admin;
   const locationSnap = getLocationSyncSnapshot(
@@ -217,64 +219,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     id: UtilityTabId;
     label: string;
     sub: string;
-    icon: React.FC<{ className?: string }>;
-    tint: string;
+    iconUrl: string;
   }[] = [
     {
       id: 'waqt',
       label: 'Waqt & Fast',
       sub: `Sehri ${almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)}`,
-      icon: Clock,
-      tint: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      iconUrl: './icons/bento/waqt.png',
     },
     {
       id: 'tracker',
       label: 'Salah Log',
       sub: '5 Waqt · Qaza',
-      icon: CheckCircle2,
-      tint: 'bg-teal-50 text-teal-700 border-teal-200',
+      iconUrl: './icons/bento/log.png',
     },
     {
       id: 'qibla',
       label: 'Qibla 3D',
       sub: `${locationSnap.qibla.bearingDegrees}° ${locationSnap.qibla.cardinalDirection}`,
-      icon: Compass,
-      tint: 'bg-amber-50 text-amber-700 border-amber-200',
+      iconUrl: './icons/bento/qibla.png',
     },
     {
       id: 'quran',
       label: 'Tajweed',
       sub: 'Audio Quran',
-      icon: BookOpen,
-      tint: 'bg-sky-50 text-sky-700 border-sky-200',
+      iconUrl: './icons/bento/tajweed.png',
     },
     {
       id: 'tasbih',
       label: 'Tasbih',
       sub: '33x / 100x',
-      icon: Hash,
-      tint: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      iconUrl: './icons/bento/tasbih.png',
     },
     {
       id: 'dua',
       label: 'Duas',
       sub: 'Adhkar · Ruqyah',
-      icon: Sparkles,
-      tint: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      iconUrl: './icons/bento/duas.png',
     },
     {
       id: 'salah_guide',
       label: 'Revert Salah',
       sub: '7 Postures',
-      icon: Sun,
-      tint: 'bg-amber-50 text-amber-700 border-amber-200',
+      iconUrl: './icons/bento/revert_salah.png',
     },
     {
       id: 'halal',
       label: 'Halal & Fitrah',
       sub: 'E-Codes · Fidyah',
-      icon: Calculator,
-      tint: 'bg-rose-50 text-rose-700 border-rose-200',
+      iconUrl: './icons/bento/halal_fitrah.png',
     },
   ];
 
@@ -283,38 +276,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       id: 'revert-care',
       label: 'Revert Care',
       sub: 'Kit & Mentor',
-      icon: BookOpen,
+      iconUrl: './icons/bento/revert_care.png',
       screen: 'product_detail' as ScreenId,
-      tint: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     },
     {
       id: 'food-aid',
       label: 'Halal Aid',
       sub: 'Asnaf Box',
-      icon: HeartHandshake,
+      iconUrl: './icons/bento/halal_aid.png',
       screen: 'catalog' as ScreenId,
-      tint: 'bg-amber-50 text-amber-700 border-amber-200',
     },
     {
       id: 'halaqa-shifts',
       label: 'Schedule',
       sub: 'Halaqa & Duty',
-      icon: Calendar,
+      iconUrl: './icons/bento/schedule.png',
       screen: 'calendar_booking' as ScreenId,
-      tint: 'bg-sky-50 text-sky-700 border-sky-200',
     },
     {
       id: 'caseworker-chat',
       label: 'Care Chat',
       sub: '24/7 Support',
-      icon: MessageSquare,
+      iconUrl: './icons/bento/chat.png',
       screen: 'chat' as ScreenId,
-      tint: 'bg-teal-50 text-teal-700 border-teal-200',
     },
   ];
 
   return (
-    <div className="relative min-h-full flex flex-col u-canvas pb-20 overflow-y-auto select-none">
+    <div className="relative min-h-full flex flex-col u-canvas pb-28 overflow-y-auto select-none">
       {/* Toast Notification Banner */}
       {toastMessage && (
         <div
@@ -389,7 +378,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </button>
                 <div className="px-2 py-0.5 rounded-md bg-emerald-950/40 border border-emerald-400/30 text-[10px] font-mono font-bold text-emerald-200 flex items-center gap-1 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>KL {currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</span>
+                  <span>KL {klTime.formatted12}</span>
                 </div>
               </div>
               <button
@@ -501,32 +490,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
 
           <div className="grid grid-cols-4 gap-2">
-            {islamicUtilitiesGrid.map((util) => {
-              const IconComponent = util.icon;
-              return (
-                <button
-                  key={util.id}
-                  type="button"
-                  onClick={() => {
-                    playClickSound?.(840);
-                    onOpenUtility?.(util.id);
-                  }}
-                  className="u-card u-card-hover p-2 flex flex-col items-center text-center cursor-pointer min-h-[76px] justify-center"
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl border flex items-center justify-center mb-1 ${util.tint}`}
-                  >
-                    <IconComponent className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px] font-bold leading-tight whitespace-nowrap">
-                    {util.label}
-                  </span>
-                  <span className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">
-                    {util.sub}
-                  </span>
-                </button>
-              );
-            })}
+            {islamicUtilitiesGrid.map((util) => (
+              <button
+                key={util.id}
+                type="button"
+                onClick={() => {
+                  playClickSound?.(840);
+                  onOpenUtility?.(util.id);
+                }}
+                className="u-card u-card-hover p-2 flex flex-col items-center text-center cursor-pointer min-h-[82px] justify-center transition-all hover:scale-[1.02] active:scale-95 group"
+              >
+                <img
+                  src={util.iconUrl}
+                  alt={util.label}
+                  className="w-10 h-10 object-contain mb-1 transition-transform group-hover:scale-105"
+                  loading="lazy"
+                />
+                <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-slate-800 dark:text-slate-100">
+                  {util.label}
+                </span>
+                <span className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">
+                  {util.sub}
+                </span>
+              </button>
+            ))}
           </div>
         </section>
 
@@ -534,26 +521,30 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {/* 3. MRM CARE & COMMUNITY QUICK ACTIONS                                     */}
         {/* ========================================================================= */}
         <section aria-label="MRM Care Quick Actions" className="grid grid-cols-4 gap-2">
-          {quickActions.map((act) => {
-            const IconComponent = act.icon;
-            return (
-              <button
-                key={act.id}
-                type="button"
-                onClick={() => {
-                  playClickSound?.();
-                  onNavigate(act.screen);
-                }}
-                className="u-card u-card-hover p-2 flex flex-col items-center text-center cursor-pointer min-h-[74px] justify-center"
-              >
-                <div className={`w-8 h-8 rounded-xl border flex items-center justify-center mb-1 ${act.tint}`}>
-                  <IconComponent className="w-4 h-4" />
-                </div>
-                <span className="text-[11px] font-semibold leading-tight whitespace-nowrap">{act.label}</span>
-                <span className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">{act.sub}</span>
-              </button>
-            );
-          })}
+          {quickActions.map((act) => (
+            <button
+              key={act.id}
+              type="button"
+              onClick={() => {
+                playClickSound?.();
+                onNavigate(act.screen);
+              }}
+              className="u-card u-card-hover p-2 flex flex-col items-center text-center cursor-pointer min-h-[82px] justify-center transition-all hover:scale-[1.02] active:scale-95 group"
+            >
+              <img
+                src={act.iconUrl}
+                alt={act.label}
+                className="w-9 h-9 object-contain mb-1 transition-transform group-hover:scale-105"
+                loading="lazy"
+              />
+              <span className="text-[11px] font-semibold leading-tight whitespace-nowrap text-slate-800 dark:text-slate-100">
+                {act.label}
+              </span>
+              <span className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">
+                {act.sub}
+              </span>
+            </button>
+          ))}
         </section>
 
         {/* ========================================================================= */}

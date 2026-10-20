@@ -64,7 +64,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   return (
-    <div className="min-h-full flex flex-col p-4 u-canvas pb-6 select-none space-y-4">
+    <div className="min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-4">
       {/* Group 0: Appearance & Screen Directory */}
       <div>
         <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2 px-1">

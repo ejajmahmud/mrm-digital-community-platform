@@ -59,19 +59,24 @@ export const MenuNavigationScreen: React.FC<MenuNavigationScreenProps> = ({
   const roleMeta: RoleConfig = ROLE_CONFIGS[currentRole] || ROLE_CONFIGS.staff_admin;
   const locationSnap = getLocationSyncSnapshot(selectedZone);
 
-  const utilityShortcuts: { id: UtilityTabId; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'waqt', label: `Waqt & Sehri (${locationSnap.zoneCode})`, icon: Clock },
-    { id: 'tracker', label: '5-Waqt Salah & Qaza Log', icon: CheckCircle2 },
-    { id: 'qibla', label: `Qibla 3D Compass (${locationSnap.qibla.bearingDegrees}°)`, icon: Compass },
-    { id: 'quran', label: 'Color-Coded Tajweed Quran', icon: BookOpen },
-    { id: 'tasbih', label: 'Digital Tasbih Counter', icon: Hash },
-    { id: 'dua', label: 'Hisnul Muslim & Ruqyah', icon: Sparkles },
-    { id: 'salah_guide', label: 'Revert 7-Posture Salah Guide', icon: Sun },
-    { id: 'halal', label: 'Halal E-Codes & Fitrah Calc', icon: Calculator },
+  const utilityShortcuts: {
+    id: UtilityTabId;
+    label: string;
+    icon: React.FC<{ className?: string }>;
+    iconUrl?: string;
+  }[] = [
+    { id: 'waqt', label: `Waqt & Sehri (${locationSnap.zoneCode})`, icon: Clock, iconUrl: './icons/bento/waqt.png' },
+    { id: 'tracker', label: '5-Waqt Salah & Qaza Log', icon: CheckCircle2, iconUrl: './icons/bento/log.png' },
+    { id: 'qibla', label: `Qibla 3D Compass (${locationSnap.qibla.bearingDegrees}°)`, icon: Compass, iconUrl: './icons/bento/qibla.png' },
+    { id: 'quran', label: 'Color-Coded Tajweed Quran', icon: BookOpen, iconUrl: './icons/bento/tajweed.png' },
+    { id: 'tasbih', label: 'Digital Tasbih Counter', icon: Hash, iconUrl: './icons/bento/tasbih.png' },
+    { id: 'dua', label: 'Hisnul Muslim & Ruqyah', icon: Sparkles, iconUrl: './icons/bento/duas.png' },
+    { id: 'salah_guide', label: 'Revert 7-Posture Salah Guide', icon: Sun, iconUrl: './icons/bento/revert_salah.png' },
+    { id: 'halal', label: 'Halal E-Codes & Fitrah Calc', icon: Calculator, iconUrl: './icons/bento/halal_fitrah.png' },
   ];
 
   return (
-    <div className="min-h-full flex flex-col p-4 u-canvas pb-6 select-none space-y-4">
+    <div className="min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-4">
       {/* Brand Identity & Active Role Card */}
       <div className="p-4 u-card flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
@@ -115,8 +120,14 @@ export const MenuNavigationScreen: React.FC<MenuNavigationScreenProps> = ({
                 }}
                 className="p-2.5 u-card u-card-hover flex items-center gap-2 text-left cursor-pointer"
               >
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-                  <Icon className="w-3.5 h-3.5" />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+                  {u.iconUrl ? (
+                    <img src={u.iconUrl} alt={u.label} className="w-6 h-6 object-contain" />
+                  ) : (
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                  )}
                 </div>
                 <span className="text-[11px] font-bold leading-tight truncate">{u.label}</span>
               </button>

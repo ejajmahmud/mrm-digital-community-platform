@@ -145,7 +145,7 @@ export const SearchScreen: React.FC<SearchScreenProps> = ({
   };
 
   return (
-    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-8 select-none space-y-3.5">
+    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-3.5">
       {/* Search Input Box */}
       <div className="relative">
         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />

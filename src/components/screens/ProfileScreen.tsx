@@ -26,7 +26,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const roleMeta: RoleConfig = ROLE_CONFIGS[currentRole] || ROLE_CONFIGS.staff_admin;
 
   return (
-    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-8 select-none space-y-4">
+    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-4">
       {/* Profile Identity Card */}
       <div className="p-4 u-card text-center relative">
         <button

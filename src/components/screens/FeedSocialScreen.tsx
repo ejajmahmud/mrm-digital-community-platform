@@ -178,7 +178,7 @@ export const FeedSocialScreen: React.FC<FeedSocialScreenProps> = ({
   };
 
   return (
-    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-8 select-none space-y-3.5">
+    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-3.5">
       {/* Compose Bar */}
       <div className="p-3 u-card flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">

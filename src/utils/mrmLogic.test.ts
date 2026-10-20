@@ -52,6 +52,18 @@ test('getNextPrayerInfo returns upcoming prayer and countdown accurately', () =>
   assert.equal(info.nextPrayer.name, 'Asar');
   assert.equal(info.minutesRemaining, 38);
   assert.equal(info.countdownLabel, '38 mins');
+
+  // Morning after Fajr (6:30 AM) should skip Syuruk (sunrise) and target Zohor (1:08 PM)
+  const morningInfo = getNextPrayerInfo(6 * 60 + 30);
+  assert.equal(morningInfo.nextPrayer.name, 'Zohor');
+  assert.equal(morningInfo.nextPrayer.id, 'dhuhr');
+  assert.equal(morningInfo.nextPrayer.time12, '1:08 PM');
+
+  // Late night after Isha (22:00) should wrap around to Subuh (5:48 AM)
+  const nightInfo = getNextPrayerInfo(22 * 60);
+  assert.equal(nightInfo.nextPrayer.name, 'Subuh');
+  assert.equal(nightInfo.nextPrayer.id, 'fajr');
+  assert.equal(nightInfo.nextPrayer.time12, '5:48 AM');
 });
 
 test('getCalendarMonthInfo switches months, computes Hijri dates, and flags Sunnah fast days', () => {

@@ -115,7 +115,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   };
 
   return (
-    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-8 select-none space-y-4">
+    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-4">
       {/* Sub-header Bar with Period Switcher & Audit Export */}
       <div className="flex items-center justify-between gap-2">
         <div className="inline-flex p-1 rounded-xl u-subtle border border-slate-200/80">

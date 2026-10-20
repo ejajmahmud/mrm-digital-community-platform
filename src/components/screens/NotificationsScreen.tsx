@@ -95,7 +95,7 @@ export const NotificationsScreen: React.FC<NotificationsScreenProps> = ({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-8 select-none space-y-3.5">
+    <div className="relative min-h-full flex flex-col p-4 u-canvas pb-28 select-none space-y-3.5">
       {/* Filter Controls & Mark All Read */}
       <div className="flex items-center justify-between gap-2">
         <div className="inline-flex p-1 rounded-xl u-subtle border border-slate-200/80">

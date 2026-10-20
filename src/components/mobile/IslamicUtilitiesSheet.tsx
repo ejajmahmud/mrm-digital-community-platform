@@ -256,16 +256,21 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
   const currentDhikr = DHIKR_LIST[dhikrIdx] || DHIKR_LIST[0];
   const fitrahCalc = calculateFitrahAndFidyah(fitrahDependents, fitrahRiceRate, missedFasts, 4);
 
-  const tabs: { id: UtilityTabId; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'waqt', label: 'Waqt & Fasting', icon: Clock },
-    { id: 'tracker', label: 'Salah Tracker', icon: CheckCircle2 },
-    { id: 'qibla', label: 'Qibla 3D', icon: Compass },
-    { id: 'quran', label: 'Tajweed Quran', icon: BookOpen },
-    { id: 'tasbih', label: 'Tasbih', icon: Hash },
-    { id: 'dua', label: 'Duas & Ruqyah', icon: Sparkles },
-    { id: 'salah_guide', label: 'Revert Salah', icon: Sun },
+  const tabs: {
+    id: UtilityTabId;
+    label: string;
+    icon: React.FC<{ className?: string }>;
+    iconUrl?: string;
+  }[] = [
+    { id: 'waqt', label: 'Waqt & Fasting', icon: Clock, iconUrl: './icons/bento/waqt.png' },
+    { id: 'tracker', label: 'Salah Tracker', icon: CheckCircle2, iconUrl: './icons/bento/log.png' },
+    { id: 'qibla', label: 'Qibla 3D', icon: Compass, iconUrl: './icons/bento/qibla.png' },
+    { id: 'quran', label: 'Tajweed Quran', icon: BookOpen, iconUrl: './icons/bento/tajweed.png' },
+    { id: 'tasbih', label: 'Tasbih', icon: Hash, iconUrl: './icons/bento/tasbih.png' },
+    { id: 'dua', label: 'Duas & Ruqyah', icon: Sparkles, iconUrl: './icons/bento/duas.png' },
+    { id: 'salah_guide', label: 'Revert Salah', icon: Sun, iconUrl: './icons/bento/revert_salah.png' },
     { id: 'sifat', label: '99 Names', icon: Moon },
-    { id: 'halal', label: 'Halal & Fitrah', icon: Calculator },
+    { id: 'halal', label: 'Halal & Fitrah', icon: Calculator, iconUrl: './icons/bento/halal_fitrah.png' },
   ];
 
   const handleZoneChange = (newZone: string) => {
@@ -518,10 +523,10 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="MRM Complete Islamic Utilities Suite"
-      className="absolute inset-x-0 top-[50px] bottom-0 z-50 u-canvas flex flex-col overflow-hidden animate-fade-in select-none"
+      className="fixed inset-0 max-w-md mx-auto z-50 u-canvas flex flex-col overflow-hidden animate-fade-in select-none shadow-2xl"
     >
       {/* Top Sheet Header */}
-      <div className="shrink-0 px-3.5 py-2.5 u-surface border-b flex items-center justify-between gap-2">
+      <div className="shrink-0 px-3.5 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] u-surface border-b flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
             <Sparkles className="w-4 h-4" />
@@ -567,7 +572,11 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                   : 'u-card hover:border-emerald-500/40'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              {tab.iconUrl ? (
+                <img src={tab.iconUrl} alt={tab.label} className="w-3.5 h-3.5 object-contain" />
+              ) : (
+                <Icon className="w-3.5 h-3.5" />
+              )}
               <span>{tab.label}</span>
             </button>
           );
@@ -575,7 +584,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
       </div>
 
       {/* Scrollable Active Utility Body */}
-      <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 pb-10">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3.5 pb-24 overscroll-contain">
         {/* =================================================================== */}
         {/* TAB 1: WAQT START/END, SEHRI/IFTAR & 3 PROHIBITED PRAYER WINDOWS    */}
         {/* =================================================================== */}
