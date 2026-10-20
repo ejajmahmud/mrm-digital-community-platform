@@ -19,6 +19,7 @@ import {
   NextPrayerInfo,
   PresetCity
 } from '../../services/prayerTimeService';
+import { format24to12 } from '../../utils/mrmLogic';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -119,13 +120,13 @@ export const LocationPrayerTimesWidget: React.FC<LocationPrayerTimesWidgetProps>
   };
 
   const prayersList = [
-    { key: 'Imsak', name: 'Imsak', arabic: 'الإمساك', time: prayerData.timings.Imsak },
-    { key: 'Fajr', name: 'Fajr', arabic: 'الفجر', time: prayerData.timings.Fajr },
-    { key: 'Sunrise', name: 'Syuruk', arabic: 'الشروق', time: prayerData.timings.Sunrise },
-    { key: 'Dhuhr', name: 'Dhuhr', arabic: 'الظهر', time: prayerData.timings.Dhuhr },
-    { key: 'Asr', name: 'Asr', arabic: 'العصر', time: prayerData.timings.Asr },
-    { key: 'Maghrib', name: 'Maghrib', arabic: 'المغرب', time: prayerData.timings.Maghrib },
-    { key: 'Isha', name: 'Isha', arabic: 'العشاء', time: prayerData.timings.Isha },
+    { key: 'Imsak', name: 'Imsak', arabic: 'الإمساك', time: format24to12(prayerData.timings.Imsak) },
+    { key: 'Fajr', name: 'Fajr', arabic: 'الفجر', time: format24to12(prayerData.timings.Fajr) },
+    { key: 'Sunrise', name: 'Syuruk', arabic: 'الشروq', time: format24to12(prayerData.timings.Sunrise) },
+    { key: 'Dhuhr', name: 'Dhuhr', arabic: 'الظهر', time: format24to12(prayerData.timings.Dhuhr) },
+    { key: 'Asr', name: 'Asr', arabic: 'العصر', time: format24to12(prayerData.timings.Asr) },
+    { key: 'Maghrib', name: 'Maghrib', arabic: 'المغرب', time: format24to12(prayerData.timings.Maghrib) },
+    { key: 'Isha', name: 'Isha', arabic: 'العشاء', time: format24to12(prayerData.timings.Isha) },
   ];
 
   return (

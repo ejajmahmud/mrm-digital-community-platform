@@ -1,5 +1,5 @@
 import { LocationPrayerTimes } from '../types';
-import { formatLiveHijriDate } from '../utils/mrmLogic';
+import { formatLiveHijriDate, getKualaLumpurNow, format24to12 } from '../utils/mrmLogic';
 
 export interface CalculationMethod {
   id: number;
@@ -41,16 +41,23 @@ export const PRESET_CITIES: PresetCity[] = [
 ];
 
 /**
- * Format raw time from API (e.g., "05:48 (MYT)" -> "05:48")
+ * Format raw time from API into 12-hour AM/PM format (e.g., "13:08 (MYT)" -> "1:08 PM")
  */
 function cleanTimeStr(raw: string): string {
   if (!raw) return '--:--';
-  const match = raw.match(/(\d{1,2}:\d{2})/);
-  return match ? match[1] : raw.slice(0, 5);
+  if (raw.includes('AM') || raw.includes('PM')) return raw;
+  const match = raw.match(/(\d{1,2}):(\d{2})/);
+  if (!match) return raw.slice(0, 8);
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
 }
 
 /**
- * Fallback static computation in case of network offline / sandbox isolation
+ * Fallback computation in case of network offline / sandbox isolation (12-hour AM/PM format)
  */
 export function getOfflineFallbackPrayerTimes(
   city: string = 'Kuala Lumpur',
@@ -60,7 +67,7 @@ export function getOfflineFallbackPrayerTimes(
   methodId: number = 17
 ): LocationPrayerTimes {
   const method = CALCULATION_METHODS.find(m => m.id === methodId) || CALCULATION_METHODS[0];
-  const now = new Date();
+  const now = getKualaLumpurNow();
   const hijri = formatLiveHijriDate(now);
   
   return {
@@ -74,14 +81,14 @@ export function getOfflineFallbackPrayerTimes(
     hijriMonthEn: hijri.month,
     hijriMonthAr: 'رَبِيعُ الثَّانِي',
     timings: {
-      Imsak: '05:38',
-      Fajr: '05:48',
-      Sunrise: '06:58',
-      Dhuhr: '13:08',
-      Asr: '16:22',
-      Maghrib: '19:12',
-      Isha: '20:21',
-      Midnight: '00:30',
+      Imsak: '5:38 AM',
+      Fajr: '5:48 AM',
+      Sunrise: '6:58 AM',
+      Dhuhr: '1:08 PM',
+      Asr: '4:22 PM',
+      Maghrib: '7:12 PM',
+      Isha: '8:21 PM',
+      Midnight: '12:30 AM',
     },
     methodName: method.shortName,
     methodId: method.id,
@@ -215,25 +222,33 @@ export interface NextPrayerInfo {
 
 /**
  * Calculate the next prayer and time remaining from timings with exact real-time seconds ticking
+ * Evaluates against Kuala Lumpur (Asia/Kuala_Lumpur, UTC+8) time by default.
  */
 export function getNextPrayerCalculation(timings: LocationPrayerTimes['timings']): NextPrayerInfo {
-  const now = new Date();
+  const now = getKualaLumpurNow();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const currentSec = now.getSeconds();
 
   const parseMinutes = (timeStr: string) => {
     if (!timeStr) return 0;
-    const [h, m] = timeStr.split(':').map(Number);
-    return (h || 0) * 60 + (m || 0);
+    const isPM = timeStr.toUpperCase().includes('PM');
+    const isAM = timeStr.toUpperCase().includes('AM');
+    const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+    if (!match) return 0;
+    let h = parseInt(match[1], 10);
+    const m = parseInt(match[2], 10);
+    if (isPM && h < 12) h += 12;
+    if (isAM && h === 12) h = 0;
+    return h * 60 + m;
   };
 
   const prayers = [
-    { name: 'Fajr', arabic: 'الفجر', minutes: parseMinutes(timings.Fajr), time: timings.Fajr },
-    { name: 'Sunrise', arabic: 'الشروق', minutes: parseMinutes(timings.Sunrise), time: timings.Sunrise },
-    { name: 'Dhuhr', arabic: 'الظهر', minutes: parseMinutes(timings.Dhuhr), time: timings.Dhuhr },
-    { name: 'Asr', arabic: 'العصر', minutes: parseMinutes(timings.Asr), time: timings.Asr },
-    { name: 'Maghrib', arabic: 'المغرب', minutes: parseMinutes(timings.Maghrib), time: timings.Maghrib },
-    { name: 'Isha', arabic: 'العشاء', minutes: parseMinutes(timings.Isha), time: timings.Isha },
+    { name: 'Fajr', arabic: 'الفجر', minutes: parseMinutes(timings.Fajr), time: format24to12(timings.Fajr) },
+    { name: 'Sunrise', arabic: 'الشروق', minutes: parseMinutes(timings.Sunrise), time: format24to12(timings.Sunrise) },
+    { name: 'Dhuhr', arabic: 'الظهر', minutes: parseMinutes(timings.Dhuhr), time: format24to12(timings.Dhuhr) },
+    { name: 'Asr', arabic: 'العصر', minutes: parseMinutes(timings.Asr), time: format24to12(timings.Asr) },
+    { name: 'Maghrib', arabic: 'المغرب', minutes: parseMinutes(timings.Maghrib), time: format24to12(timings.Maghrib) },
+    { name: 'Isha', arabic: 'العشاء', minutes: parseMinutes(timings.Isha), time: format24to12(timings.Isha) },
   ];
 
   // Find next prayer today

@@ -40,6 +40,8 @@ import {
   calculateFitrahAndFidyah,
   parse24hToMinutes,
   PrayerScheduleItem,
+  format24to12,
+  getKualaLumpurNow,
 } from '../../utils/mrmLogic';
 import { fetchPrayerTimesByCoordinates } from '../../services/prayerTimeService';
 import { CatalogItem } from '../../types/screens';
@@ -308,7 +310,9 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                 name: 'Subuh',
                 arabicName: 'الفجر',
                 time24: apiData.timings.Fajr,
+                time12: format24to12(apiData.timings.Fajr),
                 endTime24: apiData.timings.Sunrise,
+                endTime12: format24to12(apiData.timings.Sunrise),
                 rakaatSummary: '2 Sunnah · 2 Farz',
                 minutesFromMidnight: fajrM,
                 endMinutesFromMidnight: syurukM - 1,
@@ -318,7 +322,9 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                 name: 'Syuruk',
                 arabicName: 'الشروق',
                 time24: apiData.timings.Sunrise,
+                time12: format24to12(apiData.timings.Sunrise),
                 endTime24: apiData.timings.Sunrise,
+                endTime12: format24to12(apiData.timings.Sunrise),
                 rakaatSummary: 'Sunrise (No Salah)',
                 minutesFromMidnight: syurukM,
                 endMinutesFromMidnight: syurukM + 15,
@@ -328,7 +334,9 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                 name: 'Zohor',
                 arabicName: 'الظهر',
                 time24: apiData.timings.Dhuhr,
+                time12: format24to12(apiData.timings.Dhuhr),
                 endTime24: apiData.timings.Asr,
+                endTime12: format24to12(apiData.timings.Asr),
                 rakaatSummary: '4 Sunnah · 4 Farz · 2 Sunnah',
                 minutesFromMidnight: dhuhrM,
                 endMinutesFromMidnight: asrM - 1,
@@ -338,7 +346,9 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                 name: 'Asar',
                 arabicName: 'العصر',
                 time24: apiData.timings.Asr,
+                time12: format24to12(apiData.timings.Asr),
                 endTime24: apiData.timings.Maghrib,
+                endTime12: format24to12(apiData.timings.Maghrib),
                 rakaatSummary: '4 Sunnah · 4 Farz',
                 minutesFromMidnight: asrM,
                 endMinutesFromMidnight: maghribM - 1,
@@ -348,7 +358,9 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                 name: 'Maghrib',
                 arabicName: 'المغرب',
                 time24: apiData.timings.Maghrib,
+                time12: format24to12(apiData.timings.Maghrib),
                 endTime24: apiData.timings.Isha,
+                endTime12: format24to12(apiData.timings.Isha),
                 rakaatSummary: '3 Farz · 2 Sunnah',
                 minutesFromMidnight: maghribM,
                 endMinutesFromMidnight: ishaM - 1,
@@ -358,7 +370,9 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                 name: 'Isyak',
                 arabicName: 'العشاء',
                 time24: apiData.timings.Isha,
+                time12: format24to12(apiData.timings.Isha),
                 endTime24: apiData.timings.Fajr,
+                endTime12: format24to12(apiData.timings.Fajr),
                 rakaatSummary: '4 Farz · 2 Sunnah · 3 Witr',
                 minutesFromMidnight: ishaM,
                 endMinutesFromMidnight: fajrM - 1,
@@ -391,16 +405,67 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
     }
   };
 
+  const quranAudioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (quranAudioRef.current) {
+        quranAudioRef.current.pause();
+      }
+    };
+  }, []);
+
   const handlePlayAyahTone = (key: string) => {
     if (playingAyahKey === key) {
+      if (quranAudioRef.current) {
+        quranAudioRef.current.pause();
+        quranAudioRef.current.currentTime = 0;
+      }
       setPlayingAyahKey(null);
       return;
     }
-    playClickSound?.(660);
-    setPlayingAyahKey(key);
-    setTimeout(() => {
-      setPlayingAyahKey((prev) => (prev === key ? null : prev));
-    }, 2200);
+
+    if (quranAudioRef.current) {
+      quranAudioRef.current.pause();
+    }
+
+    // Mapping for Al-Fatihah, Al-Ikhlas, Al-Falaq, An-Nas
+    const [surahStr, ayahStr] = key.split(':');
+    const surah = parseInt(surahStr, 10);
+    const ayah = parseInt(ayahStr, 10);
+
+    const SURAH_START_AYAH: Record<number, number> = {
+      1: 1,      // Al-Fatihah (1-7)
+      112: 6222, // Al-Ikhlas (6222-6225)
+      113: 6226, // Al-Falaq (6226-6230)
+      114: 6231, // An-Nas (6231-6236)
+      36: 3706,  // Yasin
+    };
+
+    const start = SURAH_START_AYAH[surah] || 1;
+    const globalAyahNum = start + ayah - 1;
+    const audioUrl = `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${globalAyahNum}.mp3`;
+
+    try {
+      const audio = new Audio(audioUrl);
+      quranAudioRef.current = audio;
+      setPlayingAyahKey(key);
+      audio.play().catch(() => {
+        playClickSound?.(720);
+        setTimeout(() => setPlayingAyahKey((prev) => (prev === key ? null : prev)), 2500);
+      });
+      audio.onended = () => {
+        setPlayingAyahKey((prev) => (prev === key ? null : prev));
+      };
+      audio.onerror = () => {
+        playClickSound?.(720);
+        setTimeout(() => setPlayingAyahKey((prev) => (prev === key ? null : prev)), 2500);
+      };
+    } catch {
+      playClickSound?.(720);
+      setPlayingAyahKey(key);
+      setTimeout(() => setPlayingAyahKey((prev) => (prev === key ? null : prev)), 2500);
+    }
   };
 
   const handleTasbihTap = () => {
@@ -576,10 +641,10 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                     Sehri Last Time (Imsak)
                   </span>
                   <div className="text-lg font-bold font-mono text-white mt-0.5">
-                    {almanac.sehriEnds24} AM
+                    {almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)}
                   </div>
                   <span className="text-[10px] text-emerald-100/80 font-mono">
-                    Fajr Azan: {almanac.fajrStarts24} AM
+                    Fajr Azan: {almanac.fajrStarts12 || format24to12(almanac.fajrStarts24)}
                   </span>
                 </div>
 
@@ -588,7 +653,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                     Today&apos;s Iftar (Maghrib)
                   </span>
                   <div className="text-lg font-bold font-mono text-white mt-0.5">
-                    {almanac.iftarMaghrib24} PM
+                    {almanac.iftarMaghrib12 || format24to12(almanac.iftarMaghrib24)}
                   </div>
                   <span className="text-[10px] text-emerald-100/80 font-mono">
                     Next: {baseSnapshot.nextPrayerInfo.nextPrayer.name} in{' '}
@@ -618,7 +683,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
               </div>
             </div>
 
-            {/* 5 Farz Waqt Start & End Ranges */}
+            {/* 5 Farz Waqt Start & End Ranges (12-hour AM/PM) */}
             <div className="p-3.5 u-card space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold">
@@ -639,8 +704,8 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                       <span className="text-[10px] text-slate-500">{p.rakaatSummary}</span>
                     </div>
                     <div className="text-right font-mono">
-                      <span className="font-bold text-emerald-600">
-                        {p.time24} – {p.endTime24}
+                      <span className="font-bold text-emerald-600 text-xs">
+                        {p.time12 || format24to12(p.time24)} – {p.endTime12 || format24to12(p.endTime24 || '')}
                       </span>
                     </div>
                   </div>
@@ -648,7 +713,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
               </div>
             </div>
 
-            {/* 3 Prohibited / Forbidden Prayer Windows */}
+            {/* 3 Prohibited / Forbidden Prayer Windows (12-hour AM/PM) */}
             <div className="p-3.5 u-card space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold flex items-center gap-1.5 text-rose-600">
@@ -671,14 +736,14 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                       <p className="text-[10px] text-slate-500 leading-snug mt-0.5">{fw.reason}</p>
                     </div>
                     <span className="text-xs font-mono font-bold text-rose-600 whitespace-nowrap shrink-0">
-                      {fw.startTime24} – {fw.endTime24}
+                      {fw.startTime12 || format24to12(fw.startTime24)} – {fw.endTime12 || format24to12(fw.endTime24)}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 4 Nafl Prayer Windows (Tahajjud, Ishraq, Duha, Awwabin) */}
+            {/* 4 Nafl Prayer Windows (12-hour AM/PM) */}
             <div className="p-3.5 u-card space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-bold">Sunnah &amp; Nafl Waqt Windows</h3>
@@ -697,7 +762,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                       <p className="text-[10px] text-slate-500 mt-0.5">{nf.virtue}</p>
                     </div>
                     <span className="text-xs font-mono font-bold text-emerald-600 whitespace-nowrap shrink-0">
-                      {nf.startTime24} – {nf.endTime24}
+                      {nf.startTime12 || format24to12(nf.startTime24)} – {nf.endTime12 || format24to12(nf.endTime24)}
                     </span>
                   </div>
                 ))}

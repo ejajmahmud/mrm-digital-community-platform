@@ -33,6 +33,8 @@ import {
   getLocationSyncSnapshot,
   calculateCampaignProgress,
   formatLiveHijriDate,
+  getKualaLumpurNow,
+  format24to12,
 } from '../../utils/mrmLogic';
 import { UtilityTabId } from '../../data/islamicUtilitiesData';
 
@@ -75,12 +77,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const [skpUploaded, setSkpUploaded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Live real-time seconds ticking
-  const [currentTime, setCurrentTime] = useState<Date>(() => new Date());
+  // Live real-time seconds ticking strictly synced to Kuala Lumpur (MYT, UTC+8)
+  const [currentTime, setCurrentTime] = useState<Date>(() => getKualaLumpurNow());
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date());
+      setCurrentTime(getKualaLumpurNow());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -221,7 +223,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     {
       id: 'waqt',
       label: 'Waqt & Fast',
-      sub: `Sehri ${almanac.sehriEnds24}`,
+      sub: `Sehri ${almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)}`,
       icon: Clock,
       tint: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     },
@@ -385,6 +387,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <RefreshCw className={`w-2.5 h-2.5 ${isSyncingGps ? 'animate-spin' : ''}`} />
                   <span>GPS</span>
                 </button>
+                <div className="px-2 py-0.5 rounded-md bg-emerald-950/40 border border-emerald-400/30 text-[10px] font-mono font-bold text-emerald-200 flex items-center gap-1 shrink-0">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>KL {currentTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true })}</span>
+                </div>
               </div>
               <button
                 type="button"
@@ -420,12 +426,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   Next: {prayerInfo.nextPrayer.name} in {prayerInfo.countdownLabel}
                 </span>
                 <span className="text-xl font-bold font-mono text-white tracking-tight group-hover:underline">
-                  {prayerInfo.nextPrayer.time24}
+                  {prayerInfo.nextPrayer.time12 || format24to12(prayerInfo.nextPrayer.time24)}
                 </span>
               </button>
             </div>
 
-            {/* 5-Prayer Compact Schedule Strip Synced to Location */}
+            {/* 5-Prayer Compact Schedule Strip Synced to Location (12-hour AM/PM) */}
             <div className="grid grid-cols-5 gap-1.5 pt-0.5">
               {almanac.farzPrayers.map((p) => {
                 const isNext = p.id === prayerInfo.nextPrayer.id;
@@ -441,20 +447,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     }`}
                   >
                     <div className="text-[10px] text-emerald-100 font-medium">{p.name}</div>
-                    <div className="text-xs font-mono font-bold text-white mt-0.5">{p.time24}</div>
+                    <div className="text-[11px] font-mono font-bold text-white mt-0.5 whitespace-nowrap">
+                      {p.time12 || format24to12(p.time24)}
+                    </div>
                   </button>
                 );
               })}
             </div>
 
-            {/* MRM Sehri / Iftar & Prohibited Waqt Bar */}
+            {/* MRM Sehri / Iftar & Prohibited Waqt Bar (12-hour AM/PM) */}
             <div className="pt-2.5 border-t border-white/15 flex items-center justify-between gap-2 text-[11px]">
               <button
                 type="button"
                 onClick={() => onOpenUtility?.('waqt')}
                 className="text-emerald-50 font-mono truncate hover:underline text-left cursor-pointer"
               >
-                Sehri {almanac.sehriEnds24} · Iftar {almanac.iftarMaghrib24}
+                Sehri {almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)} · Iftar {almanac.iftarMaghrib12 || format24to12(almanac.iftarMaghrib24)}
               </button>
               <button
                 type="button"

@@ -262,74 +262,13 @@ export interface PrayerScheduleItem {
   name: string;
   arabicName: string;
   time24: string;
+  time12: string;
   endTime24?: string;
+  endTime12?: string;
   rakaatSummary?: string;
   minutesFromMidnight: number;
   endMinutesFromMidnight?: number;
 }
-
-export const JAKIM_WLY01_PRAYERS: PrayerScheduleItem[] = [
-  {
-    id: 'fajr',
-    name: 'Subuh',
-    arabicName: 'الفجر',
-    time24: '05:48',
-    endTime24: '07:00',
-    rakaatSummary: '2 Sunnah · 2 Farz',
-    minutesFromMidnight: 5 * 60 + 48,
-    endMinutesFromMidnight: 7 * 60,
-  },
-  {
-    id: 'syuruk',
-    name: 'Syuruk',
-    arabicName: 'الشروق',
-    time24: '07:01',
-    endTime24: '07:16',
-    rakaatSummary: 'Sunrise (No Salah)',
-    minutesFromMidnight: 7 * 60 + 1,
-    endMinutesFromMidnight: 7 * 60 + 16,
-  },
-  {
-    id: 'dhuhr',
-    name: 'Zohor',
-    arabicName: 'الظهر',
-    time24: '13:08',
-    endTime24: '16:23',
-    rakaatSummary: '4 Sunnah · 4 Farz · 2 Sunnah',
-    minutesFromMidnight: 13 * 60 + 8,
-    endMinutesFromMidnight: 16 * 60 + 23,
-  },
-  {
-    id: 'asr',
-    name: 'Asar',
-    arabicName: 'العصر',
-    time24: '16:24',
-    endTime24: '19:11',
-    rakaatSummary: '4 Sunnah · 4 Farz',
-    minutesFromMidnight: 16 * 60 + 24,
-    endMinutesFromMidnight: 19 * 60 + 11,
-  },
-  {
-    id: 'maghrib',
-    name: 'Maghrib',
-    arabicName: 'المغرب',
-    time24: '19:12',
-    endTime24: '20:21',
-    rakaatSummary: '3 Farz · 2 Sunnah',
-    minutesFromMidnight: 19 * 60 + 12,
-    endMinutesFromMidnight: 20 * 60 + 21,
-  },
-  {
-    id: 'isha',
-    name: 'Isyak',
-    arabicName: 'العشاء',
-    time24: '20:22',
-    endTime24: '05:47',
-    rakaatSummary: '4 Farz · 2 Sunnah · 3 Witr',
-    minutesFromMidnight: 20 * 60 + 22,
-    endMinutesFromMidnight: 5 * 60 + 47,
-  },
-];
 
 export function formatMinutesTo24h(totalMinutes: number): string {
   const normalized = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
@@ -339,6 +278,135 @@ export function formatMinutesTo24h(totalMinutes: number): string {
   const m = (normalized % 60).toString().padStart(2, '0');
   return `${h}:${m}`;
 }
+
+export function formatMinutesTo12h(totalMinutes: number): string {
+  const normalized = ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
+  let h = Math.floor(normalized / 60);
+  const m = (normalized % 60).toString().padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+export function format24to12(timeStr: string): string {
+  if (!timeStr) return '--:--';
+  if (timeStr.includes('AM') || timeStr.includes('PM')) return timeStr;
+  const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+  if (!match) return timeStr;
+  let h = parseInt(match[1], 10);
+  const m = match[2];
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m} ${ampm}`;
+}
+
+export function getKualaLumpurNow(baseDate: Date = new Date()): Date {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kuala_Lumpur',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(baseDate);
+    const getVal = (type: string, def: number) => {
+      const v = parts.find((p) => p.type === type)?.value;
+      return v ? parseInt(v, 10) : def;
+    };
+    const year = getVal('year', 2026);
+    const month = getVal('month', 10) - 1;
+    const day = getVal('day', 20);
+    let hour = getVal('hour', 9);
+    if (hour === 24) hour = 0;
+    const minute = getVal('minute', 0);
+    const second = getVal('second', 0);
+    return new Date(year, month, day, hour, minute, second);
+  } catch {
+    const utc = baseDate.getTime() + baseDate.getTimezoneOffset() * 60000;
+    return new Date(utc + 8 * 3600000);
+  }
+}
+
+export const JAKIM_WLY01_PRAYERS: PrayerScheduleItem[] = [
+  {
+    id: 'fajr',
+    name: 'Subuh',
+    arabicName: 'الفجر',
+    time24: '05:48',
+    time12: '5:48 AM',
+    endTime24: '07:00',
+    endTime12: '7:00 AM',
+    rakaatSummary: '2 Sunnah · 2 Farz',
+    minutesFromMidnight: 5 * 60 + 48,
+    endMinutesFromMidnight: 7 * 60,
+  },
+  {
+    id: 'syuruk',
+    name: 'Syuruk',
+    arabicName: 'الشروق',
+    time24: '07:01',
+    time12: '7:01 AM',
+    endTime24: '07:16',
+    endTime12: '7:16 AM',
+    rakaatSummary: 'Sunrise (No Salah)',
+    minutesFromMidnight: 7 * 60 + 1,
+    endMinutesFromMidnight: 7 * 60 + 16,
+  },
+  {
+    id: 'dhuhr',
+    name: 'Zohor',
+    arabicName: 'الظهر',
+    time24: '13:08',
+    time12: '1:08 PM',
+    endTime24: '16:23',
+    endTime12: '4:23 PM',
+    rakaatSummary: '4 Sunnah · 4 Farz · 2 Sunnah',
+    minutesFromMidnight: 13 * 60 + 8,
+    endMinutesFromMidnight: 16 * 60 + 23,
+  },
+  {
+    id: 'asr',
+    name: 'Asar',
+    arabicName: 'العصر',
+    time24: '16:24',
+    time12: '4:24 PM',
+    endTime24: '19:11',
+    endTime12: '7:11 PM',
+    rakaatSummary: '4 Sunnah · 4 Farz',
+    minutesFromMidnight: 16 * 60 + 24,
+    endMinutesFromMidnight: 19 * 60 + 11,
+  },
+  {
+    id: 'maghrib',
+    name: 'Maghrib',
+    arabicName: 'المغرب',
+    time24: '19:12',
+    time12: '7:12 PM',
+    endTime24: '20:21',
+    endTime12: '8:21 PM',
+    rakaatSummary: '3 Farz · 2 Sunnah',
+    minutesFromMidnight: 19 * 60 + 12,
+    endMinutesFromMidnight: 20 * 60 + 21,
+  },
+  {
+    id: 'isha',
+    name: 'Isyak',
+    arabicName: 'العشاء',
+    time24: '20:22',
+    time12: '8:22 PM',
+    endTime24: '05:47',
+    endTime12: '5:47 AM',
+    rakaatSummary: '4 Farz · 2 Sunnah · 3 Witr',
+    minutesFromMidnight: 20 * 60 + 22,
+    endMinutesFromMidnight: 5 * 60 + 47,
+  },
+];
 
 export function parse24hToMinutes(time24: string): number {
   if (!time24 || typeof time24 !== 'string') return 0;
@@ -357,7 +425,9 @@ export function getPrayersForZone(zoneCode: string = 'WLY01'): PrayerScheduleIte
     return {
       ...p,
       time24: formatMinutesTo24h(totalMins),
+      time12: formatMinutesTo12h(totalMins),
       endTime24: formatMinutesTo24h(endMins),
+      endTime12: formatMinutesTo12h(endMins),
       minutesFromMidnight: totalMins,
       endMinutesFromMidnight: endMins,
     };
@@ -369,7 +439,9 @@ export interface ForbiddenPrayerWindow {
   name: string;
   arabicName: string;
   startTime24: string;
+  startTime12: string;
   endTime24: string;
+  endTime12: string;
   reason: string;
 }
 
@@ -378,7 +450,9 @@ export interface NaflPrayerWindow {
   name: string;
   arabicName: string;
   startTime24: string;
+  startTime12: string;
   endTime24: string;
+  endTime12: string;
   rakaat: string;
   virtue: string;
 }
@@ -386,8 +460,11 @@ export interface NaflPrayerWindow {
 export interface WaqtAndFastingAlmanac {
   zoneCode: string;
   sehriEnds24: string;
+  sehriEnds12: string;
   fajrStarts24: string;
+  fajrStarts12: string;
   iftarMaghrib24: string;
+  iftarMaghrib12: string;
   fastingDurationLabel: string;
   farzPrayers: PrayerScheduleItem[];
   naflPrayers: NaflPrayerWindow[];
@@ -419,7 +496,9 @@ export function getWaqtAndForbiddenSchedule(
       name: "Tulu' (Sunrise Window)",
       arabicName: 'طلوع الشمس',
       startTime24: formatMinutesTo24h(syuruk.minutesFromMidnight),
+      startTime12: formatMinutesTo12h(syuruk.minutesFromMidnight),
       endTime24: formatMinutesTo24h(syuruk.minutesFromMidnight + 15),
+      endTime12: formatMinutesTo12h(syuruk.minutesFromMidnight + 15),
       reason: 'From sunrise until the sun rises a spear-length (~15 mins after Syuruk).',
     },
     {
@@ -427,7 +506,9 @@ export function getWaqtAndForbiddenSchedule(
       name: 'Istiwa / Zawal (Solar Zenith)',
       arabicName: 'استواء الشمس',
       startTime24: formatMinutesTo24h(dhuhr.minutesFromMidnight - 6),
+      startTime12: formatMinutesTo12h(dhuhr.minutesFromMidnight - 6),
       endTime24: formatMinutesTo24h(dhuhr.minutesFromMidnight - 1),
+      endTime12: formatMinutesTo12h(dhuhr.minutesFromMidnight - 1),
       reason: 'When the sun is directly overhead at meridian until it passes into Zohor.',
     },
     {
@@ -435,7 +516,9 @@ export function getWaqtAndForbiddenSchedule(
       name: 'Ghurub (Sunset Window)',
       arabicName: 'غروب الشمس',
       startTime24: formatMinutesTo24h(maghrib.minutesFromMidnight - 15),
+      startTime12: formatMinutesTo12h(maghrib.minutesFromMidnight - 15),
       endTime24: formatMinutesTo24h(maghrib.minutesFromMidnight - 1),
+      endTime12: formatMinutesTo12h(maghrib.minutesFromMidnight - 1),
       reason: 'When the sun begins to set until complete sunset at Maghrib (except today’s Asar Farz).',
     },
   ];
@@ -446,7 +529,9 @@ export function getWaqtAndForbiddenSchedule(
       name: 'Tahajjud & Qiyamul Lail',
       arabicName: 'التهجد',
       startTime24: '02:30',
+      startTime12: '2:30 AM',
       endTime24: formatMinutesTo24h(sehriEndMins),
+      endTime12: formatMinutesTo12h(sehriEndMins),
       rakaat: '2 to 8 Rakaat',
       virtue: 'Last third of the night when Allah descends to answer supplications.',
     },
@@ -455,7 +540,9 @@ export function getWaqtAndForbiddenSchedule(
       name: 'Salat al-Ishraq',
       arabicName: 'الإشراق',
       startTime24: formatMinutesTo24h(syuruk.minutesFromMidnight + 16),
+      startTime12: formatMinutesTo12h(syuruk.minutesFromMidnight + 16),
       endTime24: formatMinutesTo24h(syuruk.minutesFromMidnight + 60),
+      endTime12: formatMinutesTo12h(syuruk.minutesFromMidnight + 60),
       rakaat: '2 Rakaat',
       virtue: 'Reward of a complete Hajj and Umrah when prayed after Fajr remembrance.',
     },
@@ -464,7 +551,9 @@ export function getWaqtAndForbiddenSchedule(
       name: 'Salat al-Duha (Chasht)',
       arabicName: 'الضحى',
       startTime24: formatMinutesTo24h(syuruk.minutesFromMidnight + 61),
+      startTime12: formatMinutesTo12h(syuruk.minutesFromMidnight + 61),
       endTime24: formatMinutesTo24h(dhuhr.minutesFromMidnight - 10),
+      endTime12: formatMinutesTo12h(dhuhr.minutesFromMidnight - 10),
       rakaat: '2, 4, or 8 Rakaat',
       virtue: 'Fulfills charity due on every single joint of the human body (360 joints).',
     },
@@ -473,7 +562,9 @@ export function getWaqtAndForbiddenSchedule(
       name: 'Salat al-Awwabin',
       arabicName: 'الأوابين',
       startTime24: formatMinutesTo24h(maghrib.minutesFromMidnight + 15),
+      startTime12: formatMinutesTo12h(maghrib.minutesFromMidnight + 15),
       endTime24: formatMinutesTo24h(isha.minutesFromMidnight - 5),
+      endTime12: formatMinutesTo12h(isha.minutesFromMidnight - 5),
       rakaat: '2 to 6 Rakaat',
       virtue: 'Prayer of the oft-returning penitent between Maghrib and Isyak.',
     },
@@ -482,8 +573,11 @@ export function getWaqtAndForbiddenSchedule(
   return {
     zoneCode,
     sehriEnds24: formatMinutesTo24h(sehriEndMins),
+    sehriEnds12: formatMinutesTo12h(sehriEndMins),
     fajrStarts24: fajr.time24,
+    fajrStarts12: fajr.time12 || format24to12(fajr.time24),
     iftarMaghrib24: maghrib.time24,
+    iftarMaghrib12: maghrib.time12 || format24to12(maghrib.time24),
     fastingDurationLabel: `${fastHrs}h ${fastRemMins}m`,
     farzPrayers: prayers.filter((p) => p.id !== 'syuruk'),
     naflPrayers,
@@ -698,9 +792,20 @@ export function getLocationSyncSnapshot(
   const activeLat = customCoords?.lat ?? resolvedZone.lat;
   const activeLng = customCoords?.lng ?? resolvedZone.lng;
 
+  // Default time to Kuala Lumpur, Malaysia (Asia/Kuala_Lumpur, UTC+8)
+  const klNow = getKualaLumpurNow();
+  const effectiveMinutes =
+    customMinutesFromMidnight !== undefined
+      ? customMinutesFromMidnight
+      : klNow.getHours() * 60 + klNow.getMinutes();
+  const effectiveSeconds =
+    customSecondsFromMidnight !== undefined
+      ? customSecondsFromMidnight
+      : klNow.getHours() * 3600 + klNow.getMinutes() * 60 + klNow.getSeconds();
+
   const prayers = getPrayersForZone(resolvedZone.code);
   const almanac = getWaqtAndForbiddenSchedule(resolvedZone.code, prayers);
-  const nextPrayerInfo = getNextPrayerInfo(customMinutesFromMidnight, prayers, customSecondsFromMidnight);
+  const nextPrayerInfo = getNextPrayerInfo(effectiveMinutes, prayers, effectiveSeconds);
   const qibla = calculateQiblaAndDistance(activeLat, activeLng);
   const nearbyFacilities = getNearbyMrmFacilities(activeLat, activeLng);
 

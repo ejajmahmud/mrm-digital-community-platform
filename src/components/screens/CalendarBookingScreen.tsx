@@ -19,6 +19,7 @@ import {
   generateICalendarBooking,
   getLocationSyncSnapshot,
   formatLiveHijriDate,
+  format24to12,
 } from '../../utils/mrmLogic';
 import { UtilityTabId } from '../../data/islamicUtilitiesData';
 
@@ -246,10 +247,10 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
             </span>
             <span className="text-[11px] text-emerald-600 font-mono font-semibold block truncate">
               {meta.isAyyamAlBeedh
-                ? `★ Ayyam al-Beedh · Sehri ${almanac.sehriEnds24} · Iftar ${almanac.iftarMaghrib24}`
+                ? `★ Ayyam al-Beedh · Sehri ${almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)} · Iftar ${almanac.iftarMaghrib12 || format24to12(almanac.iftarMaghrib24)}`
                 : meta.isSunnahFastDay
-                ? `★ Sunnah Fast · Sehri ${almanac.sehriEnds24} · Iftar ${almanac.iftarMaghrib24}`
-                : `${meta.hijriDateLabel} · Sehri ${almanac.sehriEnds24} · Iftar ${almanac.iftarMaghrib24}`}
+                ? `★ Sunnah Fast · Sehri ${almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)} · Iftar ${almanac.iftarMaghrib12 || format24to12(almanac.iftarMaghrib24)}`
+                : `${meta.hijriDateLabel} · Sehri ${almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)} · Iftar ${almanac.iftarMaghrib12 || format24to12(almanac.iftarMaghrib24)}`}
             </span>
           </div>
         </div>
@@ -388,13 +389,13 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
               <div className="p-2.5 rounded-xl u-subtle">
                 <span className="text-[10px] text-slate-500 block">Sehri Ends (Imsak)</span>
                 <span className="text-sm font-bold text-emerald-600">
-                  {almanac.sehriEnds24} AM
+                  {almanac.sehriEnds12 || format24to12(almanac.sehriEnds24)}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl u-subtle">
                 <span className="text-[10px] text-slate-500 block">Iftar (Maghrib)</span>
                 <span className="text-sm font-bold text-emerald-600">
-                  {almanac.iftarMaghrib24} PM
+                  {almanac.iftarMaghrib12 || format24to12(almanac.iftarMaghrib24)}
                 </span>
               </div>
             </div>
@@ -405,8 +406,8 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
                   <span className="font-semibold">
                     {p.name} <span className="text-[10px] text-slate-400">({p.rakaatSummary})</span>
                   </span>
-                  <span className="font-mono font-bold text-emerald-600">
-                    {p.time24} – {p.endTime24}
+                  <span className="font-mono font-bold text-emerald-600 text-[11px]">
+                    {p.time12 || format24to12(p.time24)} – {p.endTime12 || format24to12(p.endTime24 || '')}
                   </span>
                 </div>
               ))}
@@ -425,8 +426,8 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
                 className="p-2 rounded-xl u-subtle flex items-center justify-between text-xs"
               >
                 <span className="font-semibold">{fw.name}</span>
-                <span className="font-mono font-bold text-rose-600">
-                  {fw.startTime24} – {fw.endTime24}
+                <span className="font-mono font-bold text-rose-600 text-[11px]">
+                  {fw.startTime12 || format24to12(fw.startTime24)} – {fw.endTime12 || format24to12(fw.endTime24)}
                 </span>
               </div>
             ))}
