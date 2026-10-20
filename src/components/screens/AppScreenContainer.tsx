@@ -605,7 +605,7 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
       {!hideBottomNav && (
         <nav
           aria-label="Mobile Bottom Navigation"
-          className="fixed bottom-0 inset-x-0 max-w-md mx-auto z-[80] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 min-h-[64px] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 px-4 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+          className="fixed bottom-0 inset-x-0 max-w-md mx-auto z-[80] bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 min-h-[64px] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 px-4 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
         >
           {[
             { id: 'home' as ScreenId, label: 'Home', icon: Home },

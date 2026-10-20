@@ -376,10 +376,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <RefreshCw className={`w-2.5 h-2.5 ${isSyncingGps ? 'animate-spin' : ''}`} />
                   <span>GPS</span>
                 </button>
-                <div className="px-2 py-0.5 rounded-md bg-emerald-950/40 border border-emerald-400/30 text-[10px] font-mono font-bold text-emerald-200 flex items-center gap-1 shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span>KL {klTime.formatted12}</span>
-                </div>
               </div>
               <button
                 type="button"
@@ -393,15 +389,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </button>
             </div>
 
-            {/* Greeting & Next Prayer Focal Anchor */}
-            <div className="flex items-end justify-between gap-3">
+            {/* Live Kuala Lumpur Clock & Upcoming Prayer Focal Anchor */}
+            <div className="p-3 rounded-2xl bg-black/25 border border-white/15 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs text-emerald-100/80 font-medium">
-                  Assalamu Alaikum, {roleMeta.name.split(' ')[0]}
-                </p>
-                <h1 className="text-lg font-bold tracking-tight text-white mt-0.5">
-                  {roleMeta.shortLabel} Workspace
-                </h1>
+                <div className="flex items-center gap-1.5 text-[10px] font-mono font-bold text-emerald-200 uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+                  <span>Kuala Lumpur Time (MYT)</span>
+                </div>
+                <div className="text-2xl font-black font-mono text-white tracking-tight mt-0.5 flex items-center gap-1.5">
+                  <Clock className="w-5 h-5 text-emerald-300 shrink-0" />
+                  <span>{klTime.formatted12}</span>
+                </div>
               </div>
               <button
                 type="button"
@@ -409,13 +407,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   playClickSound?.();
                   onOpenUtility?.('waqt');
                 }}
-                className="text-right cursor-pointer group"
+                className="text-right cursor-pointer group shrink-0 pl-3 border-l border-white/15"
               >
                 <span className="text-[10px] text-emerald-200 font-medium block">
-                  Next: {prayerInfo.nextPrayer.name} in {prayerInfo.countdownLabel}
+                  Next: {prayerInfo.nextPrayer.name} ({prayerInfo.nextPrayer.time12 || format24to12(prayerInfo.nextPrayer.time24)})
                 </span>
-                <span className="text-xl font-bold font-mono text-white tracking-tight group-hover:underline">
-                  {prayerInfo.nextPrayer.time12 || format24to12(prayerInfo.nextPrayer.time24)}
+                <span className="text-xs font-bold font-mono text-white bg-white/15 px-2 py-0.5 rounded-lg inline-block mt-1 group-hover:bg-white/25 transition-colors">
+                  in {prayerInfo.countdownLabel}
                 </span>
               </button>
             </div>
