@@ -103,7 +103,7 @@ export const CheckoutPaymentScreen: React.FC<CheckoutPaymentScreenProps> = ({
   };
 
   return (
-    <div className="relative min-h-full flex flex-col justify-between p-4 u-canvas pb-8 select-none">
+    <div className="relative min-h-full flex flex-col justify-between p-4 u-canvas pb-28 select-none">
       {isSuccess ? (
         /* Official Tax-Deductible Donation Receipt */
         <div className="flex-1 flex flex-col items-center justify-center py-4 space-y-4 animate-fade-in">

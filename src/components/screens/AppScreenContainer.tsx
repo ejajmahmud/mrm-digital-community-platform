@@ -227,6 +227,7 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
   const isAuthScreen = ['splash', 'onboarding', 'welcome', 'login', 'signup'].includes(
     currentScreen
   );
+  const hideBottomNav = ['splash', 'login', 'signup'].includes(currentScreen);
 
   const renderCurrentScreen = () => {
     switch (currentScreen) {
@@ -600,11 +601,11 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
         {renderCurrentScreen()}
       </div>
 
-      {/* Bottom Fixed Navigation Bar */}
-      {!isAuthScreen && (
+      {/* Bottom Fixed Navigation Bar - Available across all core pages & utilities */}
+      {!hideBottomNav && (
         <nav
           aria-label="Mobile Bottom Navigation"
-          className="fixed bottom-0 inset-x-0 max-w-md mx-auto z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 min-h-[64px] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 px-4 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
+          className="fixed bottom-0 inset-x-0 max-w-md mx-auto z-[80] bg-white/95 dark:bg-slate-950/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800/80 min-h-[64px] pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 px-4 flex items-center justify-around shadow-[0_-4px_20px_rgba(0,0,0,0.06)]"
         >
           {[
             { id: 'home' as ScreenId, label: 'Home', icon: Home },
@@ -615,16 +616,23 @@ export const AppScreenContainer: React.FC<AppScreenContainerProps> = ({
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive =
-              currentScreen === tab.id ||
-              (tab.id === 'catalog' &&
-                ['product_detail', 'cart', 'checkout'].includes(currentScreen)) ||
-              (tab.id === 'profile' && currentScreen === 'settings');
+              currentUtilityTab === null &&
+              (currentScreen === tab.id ||
+                (tab.id === 'catalog' &&
+                  ['product_detail', 'cart', 'checkout'].includes(currentScreen)) ||
+                (tab.id === 'profile' && currentScreen === 'settings'));
 
             return (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => handleNavigate(tab.id)}
+                onClick={() => {
+                  playClickSound?.();
+                  if (currentUtilityTab !== null) {
+                    setUtilityTab(null);
+                  }
+                  handleNavigate(tab.id);
+                }}
                 className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer min-w-[58px] min-h-[44px] ${
                   isActive
                     ? 'text-emerald-600 font-bold'

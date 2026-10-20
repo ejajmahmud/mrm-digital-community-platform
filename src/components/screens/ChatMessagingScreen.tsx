@@ -187,7 +187,7 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
   };
 
   return (
-    <div className="relative min-h-full flex flex-col justify-between p-0 u-canvas select-none">
+    <div className="relative min-h-full flex flex-col justify-between p-0 pb-16 u-canvas select-none">
       {/* Coordinator Status Sub-bar */}
       <div className="px-4 py-2.5 u-surface border-b flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -330,7 +330,8 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
       {/* Input Bar */}
       <form
         onSubmit={handleSendMessage}
-        className="sticky bottom-0 inset-x-0 p-3 u-surface border-t flex items-center gap-2 z-20"
+        style={{ bottom: 'max(64px, calc(56px + env(safe-area-inset-bottom, 0px)))' }}
+        className="sticky inset-x-0 p-3 u-surface border-t flex items-center gap-2 z-20 shadow-md"
       >
         <button
           type="button"

@@ -547,7 +547,8 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="MRM Complete Islamic Utilities Suite"
-      className="fixed inset-0 max-w-md mx-auto z-50 u-canvas flex flex-col overflow-hidden animate-fade-in select-none shadow-2xl"
+      style={{ bottom: 'max(64px, calc(56px + env(safe-area-inset-bottom, 0px)))' }}
+      className="fixed top-0 inset-x-0 max-w-md mx-auto z-50 u-canvas flex flex-col overflow-hidden animate-fade-in select-none shadow-2xl"
     >
       {/* Top Sheet Header */}
       <div className="shrink-0 px-3.5 py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))] u-surface border-b flex items-center justify-between gap-2">

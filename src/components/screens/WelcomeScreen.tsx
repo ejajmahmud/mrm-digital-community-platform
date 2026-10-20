@@ -96,7 +96,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       </div>
 
       {/* Bottom Auth Flow */}
-      <div className="w-full space-y-2.5 pb-2">
+      <div className="w-full space-y-2.5 pb-20">
         <button
           type="button"
           onClick={() => {

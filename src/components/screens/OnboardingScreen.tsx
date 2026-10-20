@@ -140,7 +140,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({
       </div>
 
       {/* Navigation Button */}
-      <div className="w-full pb-2">
+      <div className="w-full pb-20">
         <button
           type="button"
           onClick={handleNext}

@@ -39,7 +39,7 @@ export const EmptyLoadingErrorScreen: React.FC<EmptyLoadingErrorScreenProps> = (
   };
 
   return (
-    <div className="relative min-h-full flex flex-col justify-between p-4 u-canvas pb-8 select-none">
+    <div className="relative min-h-full flex flex-col justify-between p-4 u-canvas pb-28 select-none">
       {/* State Switcher Pills */}
       <div className="mb-4 p-1 rounded-xl u-subtle border border-slate-200/80 grid grid-cols-3 gap-1">
         {(['loading', 'empty', 'error'] as const).map((s) => (
