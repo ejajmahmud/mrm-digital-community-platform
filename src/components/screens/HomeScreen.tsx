@@ -506,10 +506,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   className="w-10 h-10 object-contain mb-1 transition-transform group-hover:scale-105"
                   loading="lazy"
                 />
-                <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-slate-800 dark:text-slate-100">
+                <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-black">
                   {util.label}
                 </span>
-                <span className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">
+                <span className="text-[9.5px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
                   {util.sub}
                 </span>
               </button>
@@ -537,10 +537,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 className="w-9 h-9 object-contain mb-1 transition-transform group-hover:scale-105"
                 loading="lazy"
               />
-              <span className="text-[11px] font-semibold leading-tight whitespace-nowrap text-slate-800 dark:text-slate-100">
+              <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-black">
                 {act.label}
               </span>
-              <span className="text-[9px] text-slate-400 mt-0.5 whitespace-nowrap">
+              <span className="text-[9.5px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
                 {act.sub}
               </span>
             </button>
