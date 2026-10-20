@@ -129,7 +129,7 @@ export const MenuNavigationScreen: React.FC<MenuNavigationScreenProps> = ({
                     </div>
                   )}
                 </div>
-                <span className="text-[11px] font-bold leading-tight truncate text-black">{u.label}</span>
+                <span className="text-[11px] font-bold leading-tight truncate text-black dark:text-white">{u.label}</span>
               </button>
             );
           })}

@@ -474,7 +474,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         <section aria-label="MRM Daily Islamic Utilities" className="space-y-2">
           <div className="flex items-center justify-between px-0.5">
             <div>
-              <h2 className="text-xs font-extrabold tracking-tight flex items-center gap-1.5">
+              <h2 className="text-xs font-extrabold tracking-tight flex items-center gap-1.5 text-black dark:text-white">
                 <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Daily Islamic Utilities · {locationSnap.zoneCode}</span>
               </h2>
@@ -506,10 +506,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   className="w-10 h-10 object-contain mb-1 transition-transform group-hover:scale-105"
                   loading="lazy"
                 />
-                <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-black">
+                <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-black dark:text-white">
                   {util.label}
                 </span>
-                <span className="text-[9.5px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
+                <span className="text-[9.5px] font-semibold text-slate-600 dark:text-slate-300 mt-0.5 whitespace-nowrap">
                   {util.sub}
                 </span>
               </button>
@@ -520,31 +520,39 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {/* ========================================================================= */}
         {/* 3. MRM CARE & COMMUNITY QUICK ACTIONS                                     */}
         {/* ========================================================================= */}
-        <section aria-label="MRM Care Quick Actions" className="grid grid-cols-4 gap-2">
-          {quickActions.map((act) => (
-            <button
-              key={act.id}
-              type="button"
-              onClick={() => {
-                playClickSound?.();
-                onNavigate(act.screen);
-              }}
-              className="u-card u-card-hover p-2 flex flex-col items-center text-center cursor-pointer min-h-[82px] justify-center transition-all hover:scale-[1.02] active:scale-95 group"
-            >
-              <img
-                src={act.iconUrl}
-                alt={act.label}
-                className="w-9 h-9 object-contain mb-1 transition-transform group-hover:scale-105"
-                loading="lazy"
-              />
-              <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-black">
-                {act.label}
-              </span>
-              <span className="text-[9.5px] font-semibold text-slate-500 mt-0.5 whitespace-nowrap">
-                {act.sub}
-              </span>
-            </button>
-          ))}
+        <section aria-label="MRM Care Quick Actions" className="space-y-2">
+          <div className="flex items-center justify-between px-0.5">
+            <h2 className="text-xs font-extrabold tracking-tight flex items-center gap-1.5 text-black dark:text-white">
+              <HeartHandshake className="w-3.5 h-3.5 text-emerald-600" />
+              <span>MRM Care Operations</span>
+            </h2>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {quickActions.map((act) => (
+              <button
+                key={act.id}
+                type="button"
+                onClick={() => {
+                  playClickSound?.();
+                  onNavigate(act.screen);
+                }}
+                className="u-card u-card-hover p-2 flex flex-col items-center text-center cursor-pointer min-h-[82px] justify-center transition-all hover:scale-[1.02] active:scale-95 group"
+              >
+                <img
+                  src={act.iconUrl}
+                  alt={act.label}
+                  className="w-9 h-9 object-contain mb-1 transition-transform group-hover:scale-105"
+                  loading="lazy"
+                />
+                <span className="text-[11px] font-bold leading-tight whitespace-nowrap text-black dark:text-white">
+                  {act.label}
+                </span>
+                <span className="text-[9.5px] font-semibold text-slate-600 dark:text-slate-300 mt-0.5 whitespace-nowrap">
+                  {act.sub}
+                </span>
+              </button>
+            ))}
+          </div>
         </section>
 
         {/* ========================================================================= */}

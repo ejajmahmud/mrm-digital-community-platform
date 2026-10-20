@@ -85,6 +85,30 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
     }
   }, [selectedZone]);
 
+  // Handle ESC key to dismiss sheet cleanly
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  const handlePronounce = (text: string) => {
+    playClickSound?.(880);
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.85;
+        window.speechSynthesis.speak(utterance);
+      } catch {}
+    }
+  };
+
   // 1. Waqt & Fasting State
   const [isFastingToday, setIsFastingToday] = useState<boolean>(true);
   const [fastingStreak, setFastingStreak] = useState<number>(8);
@@ -532,7 +556,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <h2 className="text-xs font-extrabold tracking-tight truncate">
+            <h2 className="text-xs font-extrabold tracking-tight truncate text-black dark:text-white">
               MRM Islamic Utilities &amp; Almanac Suite
             </h2>
             <p className="text-[10px] text-emerald-600 font-mono font-semibold truncate">
@@ -1354,7 +1378,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                   </span>
                   <button
                     type="button"
-                    onClick={() => playClickSound?.(680)}
+                    onClick={() => handlePronounce(stepObj.transliteration)}
                     className="px-2.5 py-1 rounded-lg u-btn-secondary text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Volume2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -1432,7 +1456,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
             <div className="p-3.5 u-card space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xs font-bold">
+                  <h3 className="text-xs font-bold text-black dark:text-white">
                     Zakat Fitrah &amp; Fidyah Calculator (MAIWP / LZS)
                   </h3>
                   <span className="text-[10px] text-slate-500">
@@ -1495,11 +1519,11 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                   <span>
                     Zakat Fitrah ({fitrahDependents} pax × RM {fitrahRiceRate}):
                   </span>
-                  <span className="font-bold">RM {fitrahCalc.fitrahTotal}</span>
+                  <span className="font-bold text-black dark:text-white">RM {fitrahCalc.fitrahTotal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Fidyah ({missedFasts} days × RM 4):</span>
-                  <span className="font-bold">RM {fitrahCalc.fidyahTotal}</span>
+                  <span className="font-bold text-black dark:text-white">RM {fitrahCalc.fidyahTotal}</span>
                 </div>
               </div>
 
@@ -1535,7 +1559,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
 
             {/* JAKIM Halal E-Code Ingredient Checker */}
             <div className="space-y-2.5">
-              <h3 className="text-xs font-bold px-0.5">
+              <h3 className="text-xs font-bold px-0.5 text-black dark:text-white">
                 JAKIM Halal E-Code &amp; Food Additive Scanner
               </h3>
               <div className="relative">
@@ -1579,7 +1603,7 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
                         <span className="font-mono text-xs font-bold px-2 py-0.5 rounded u-subtle">
                           {item.code}
                         </span>
-                        <span className="text-xs font-bold">{item.name}</span>
+                        <span className="text-xs font-bold text-black dark:text-white">{item.name}</span>
                       </div>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
