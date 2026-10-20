@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   HeartHandshake,
   Calendar,
@@ -32,6 +32,7 @@ import {
   MRM_LOCATION_ZONES,
   getLocationSyncSnapshot,
   calculateCampaignProgress,
+  formatLiveHijriDate,
 } from '../../utils/mrmLogic';
 import { UtilityTabId } from '../../data/islamicUtilitiesData';
 
@@ -58,18 +59,47 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   isSyncingGps = false,
   playClickSound,
 }) => {
-  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [isOnDuty, setIsOnDuty] = useState(() => {
+    return localStorage.getItem('mrm_on_duty') !== 'false';
+  });
   const [panicMode, setPanicMode] = useState(false);
-  const [missionAccepted, setMissionAccepted] = useState(false);
+  const [calcDisplay, setCalcDisplay] = useState('0');
+  const [calcStored, setCalcStored] = useState<number | null>(null);
+  const [calcOp, setCalcOp] = useState<string | null>(null);
+  const [calcResetOnNext, setCalcResetOnNext] = useState(false);
+
+  const [missionAccepted, setMissionAccepted] = useState(() => {
+    return localStorage.getItem('mrm_mission_accepted') === 'true';
+  });
   const [assignedSquadIds, setAssignedSquadIds] = useState<string[]>([]);
   const [skpUploaded, setSkpUploaded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  // Live real-time seconds ticking
+  const [currentTime, setCurrentTime] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentMinutesFromMidnight = currentTime.getHours() * 60 + currentTime.getMinutes();
+  const currentSecondsFromMidnight =
+    currentTime.getHours() * 3600 + currentTime.getMinutes() * 60 + currentTime.getSeconds();
+
   const roleMeta: RoleConfig = ROLE_CONFIGS[currentRole] || ROLE_CONFIGS.staff_admin;
-  const locationSnap = getLocationSyncSnapshot(selectedZone);
+  const locationSnap = getLocationSyncSnapshot(
+    selectedZone,
+    currentMinutesFromMidnight,
+    undefined,
+    currentSecondsFromMidnight
+  );
   const prayerInfo = locationSnap.nextPrayerInfo;
   const almanac = locationSnap.almanac;
   const featuredProgress = calculateCampaignProgress(26400, 30000);
+  const liveHijri = formatLiveHijriDate(currentTime);
 
   const showToast = (msg: string) => {
     playClickSound?.(850);
@@ -79,20 +109,92 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }, 3200);
   };
 
+  const handleDutyToggle = () => {
+    playClickSound?.();
+    setIsOnDuty((prev) => {
+      const next = !prev;
+      localStorage.setItem('mrm_on_duty', String(next));
+      showToast(next ? 'Status updated: ACTIVE ON DUTY' : 'Status updated: OFF DUTY');
+      return next;
+    });
+  };
+
+  const handleCalcButton = (b: string) => {
+    playClickSound?.(620);
+    if (b === 'C') {
+      setCalcDisplay('0');
+      setCalcStored(null);
+      setCalcOp(null);
+      setCalcResetOnNext(false);
+      return;
+    }
+    if (b === '⌫') {
+      setCalcDisplay((prev) => (prev.length > 1 ? prev.slice(0, -1) : '0'));
+      return;
+    }
+    if (b === '±') {
+      setCalcDisplay((prev) => (prev.startsWith('-') ? prev.slice(1) : '-' + prev));
+      return;
+    }
+    if (b === '%') {
+      setCalcDisplay((prev) => String(parseFloat(prev) / 100));
+      return;
+    }
+    if (['+', '-', '×', '÷'].includes(b)) {
+      setCalcStored(parseFloat(calcDisplay));
+      setCalcOp(b);
+      setCalcResetOnNext(true);
+      return;
+    }
+    if (b === '=') {
+      if (calcStored !== null && calcOp) {
+        const cur = parseFloat(calcDisplay);
+        let res = cur;
+        if (calcOp === '+') res = calcStored + cur;
+        if (calcOp === '-') res = calcStored - cur;
+        if (calcOp === '×') res = calcStored * cur;
+        if (calcOp === '÷') res = cur !== 0 ? calcStored / cur : 0;
+        setCalcDisplay(String(res));
+        setCalcStored(null);
+        setCalcOp(null);
+        setCalcResetOnNext(true);
+      }
+      return;
+    }
+    // Digit or dot
+    if (calcResetOnNext) {
+      setCalcDisplay(b === '.' ? '0.' : b);
+      setCalcResetOnNext(false);
+    } else {
+      if (b === '.' && calcDisplay.includes('.')) return;
+      setCalcDisplay((prev) => (prev === '0' && b !== '.' ? b : prev + b));
+    }
+  };
+
   if (panicMode) {
     return (
       <div className="min-h-full u-canvas p-6 flex flex-col justify-between select-none font-mono">
         <div className="text-right py-6 border-b border-slate-200">
           <span className="text-xs text-slate-400 block mb-1">STANDARD CALCULATOR</span>
-          <span className="text-4xl font-bold">0</span>
+          <span className="text-4xl font-bold truncate block">{calcDisplay}</span>
         </div>
-        <div className="grid grid-cols-4 gap-3 text-lg font-bold my-4">
-          {['C', '±', '%', '÷', '7', '8', '9', '×', '4', '5', '6', '-', '1', '2', '3', '+'].map((b) => (
+        <div className="grid grid-cols-4 gap-2.5 text-lg font-bold my-4">
+          {[
+            'C', '±', '%', '÷',
+            '7', '8', '9', '×',
+            '4', '5', '6', '-',
+            '1', '2', '3', '+',
+            '0', '.', '⌫', '='
+          ].map((b) => (
             <button
               key={b}
               type="button"
-              onClick={() => playClickSound?.(600)}
-              className="min-h-[48px] p-3 u-card rounded-xl text-center cursor-pointer active:scale-95 transition-transform"
+              onClick={() => handleCalcButton(b)}
+              className={`min-h-[50px] p-3 rounded-xl text-center cursor-pointer active:scale-95 transition-transform border ${
+                ['÷', '×', '-', '+', '='].includes(b)
+                  ? 'bg-emerald-600 text-white border-emerald-700'
+                  : 'u-card border-slate-200'
+              }`}
             >
               {b}
             </button>

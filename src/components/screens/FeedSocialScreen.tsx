@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Heart,
   MessageCircle,
@@ -32,55 +32,63 @@ interface PostItem {
   badge?: string;
 }
 
+const DEFAULT_POSTS: PostItem[] = [
+  {
+    id: 'p-1',
+    author: 'Capt. Razali Noor',
+    authorAvatar: ASSETS.avatars.admin,
+    role: 'Crisis Ops Director · National HQ',
+    timeAgo: '2h ago',
+    content:
+      'Alhamdulillah! Today our field squads completed 42 emergency grocery care box deliveries across Sentul and Cheras sectors. Big shoutout to Brother Ahmad Faisal and all 18 volunteer units on duty!',
+    imageAttachment: ASSETS.feed.foodDriveAction,
+    likes: 84,
+    comments: 12,
+    liked: false,
+    saved: false,
+    badge: 'Official Dispatch',
+  },
+  {
+    id: 'p-2',
+    author: 'Ustazah Hana Al-Idrus',
+    authorAvatar: ASSETS.avatars.teacher,
+    role: 'Lead Revert Mentor · Syariah Board',
+    timeAgo: '5h ago',
+    content:
+      'Blessed to host our monthly Sister Reverts Halaqa & Tajweed clinic at Masjid Wilayah today. 14 new Muslim sisters gathered to learn Salah recitation, share their stories, and support one another.',
+    imageAttachment: ASSETS.feed.sistersHalaqa,
+    likes: 119,
+    comments: 19,
+    liked: true,
+    saved: true,
+    badge: 'Community Story',
+  },
+  {
+    id: 'p-3',
+    author: 'Ahmad Faisal',
+    authorAvatar: ASSETS.avatars.volunteer,
+    role: 'Squad Sentul Field Responder',
+    timeAgo: '1d ago',
+    content:
+      'Completed the emergency medical transit for Uncle Daud to HKL this morning. Dialysis session went smoothly on schedule. Huge gratitude to the dispatch coordinators for rapid triage!',
+    imageAttachment: ASSETS.feed.volunteerCelebration,
+    likes: 62,
+    comments: 7,
+    liked: false,
+    saved: false,
+  },
+];
+
 export const FeedSocialScreen: React.FC<FeedSocialScreenProps> = ({
   playClickSound,
 }) => {
-  const [posts, setPosts] = useState<PostItem[]>([
-    {
-      id: 'p-1',
-      author: 'Capt. Razali Noor',
-      authorAvatar: ASSETS.avatars.admin,
-      role: 'Crisis Ops Director · National HQ',
-      timeAgo: '2h ago',
-      content:
-        'Alhamdulillah! Today our field squads completed 42 emergency grocery care box deliveries across Sentul and Cheras sectors. Big shoutout to Brother Ahmad Faisal and all 18 volunteer units on duty!',
-      imageAttachment: ASSETS.feed.foodDriveAction,
-      likes: 84,
-      comments: 12,
-      liked: false,
-      saved: false,
-      badge: 'Official Dispatch',
-    },
-    {
-      id: 'p-2',
-      author: 'Ustazah Hana Al-Idrus',
-      authorAvatar: ASSETS.avatars.teacher,
-      role: 'Lead Revert Mentor · Syariah Board',
-      timeAgo: '5h ago',
-      content:
-        'Blessed to host our monthly Sister Reverts Halaqa & Tajweed clinic at Masjid Wilayah today. 14 new Muslim sisters gathered to learn Salah recitation, share their stories, and support one another.',
-      imageAttachment: ASSETS.feed.sistersHalaqa,
-      likes: 119,
-      comments: 19,
-      liked: true,
-      saved: true,
-      badge: 'Community Story',
-    },
-    {
-      id: 'p-3',
-      author: 'Ahmad Faisal',
-      authorAvatar: ASSETS.avatars.volunteer,
-      role: 'Squad Sentul Field Responder',
-      timeAgo: '1d ago',
-      content:
-        'Completed the emergency medical transit for Uncle Daud to HKL this morning. Dialysis session went smoothly on schedule. Huge gratitude to the dispatch coordinators for rapid triage!',
-      imageAttachment: ASSETS.feed.volunteerCelebration,
-      likes: 62,
-      comments: 7,
-      liked: false,
-      saved: false,
-    },
-  ]);
+  const [posts, setPosts] = useState<PostItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('mrm_feed_posts');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_POSTS;
+  });
 
   const [showNewPostModal, setShowNewPostModal] = useState(
     () =>
@@ -90,6 +98,12 @@ export const FeedSocialScreen: React.FC<FeedSocialScreenProps> = ({
   const [newContent, setNewContent] = useState('');
   const [activeCommentPostId, setActiveCommentPostId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState('');
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mrm_feed_posts', JSON.stringify(posts));
+    } catch {}
+  }, [posts]);
 
   const handleLike = (id: string) => {
     playClickSound?.();
@@ -145,6 +159,22 @@ export const FeedSocialScreen: React.FC<FeedSocialScreenProps> = ({
     );
     setCommentText('');
     setActiveCommentPostId(null);
+  };
+
+  const handleShare = async (post: PostItem) => {
+    playClickSound?.();
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `MRM Community: ${post.author}`,
+          text: post.content,
+          url: window.location.href,
+        });
+      } catch {}
+    } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(`${post.author} on MRM Care:\n${post.content}`);
+      alert('Post copied to clipboard!');
+    }
   };
 
   return (
@@ -250,7 +280,7 @@ export const FeedSocialScreen: React.FC<FeedSocialScreenProps> = ({
 
                 <button
                   type="button"
-                  onClick={() => playClickSound?.()}
+                  onClick={() => handleShare(post)}
                   className="flex items-center gap-1 font-semibold hover:text-slate-800 cursor-pointer"
                   aria-label="Share post"
                 >

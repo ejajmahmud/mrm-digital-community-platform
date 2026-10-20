@@ -17,6 +17,7 @@ import {
   VolunteerProfile, 
   ActivityNotification 
 } from '../../types';
+import { formatLiveHijriDate } from '../../utils/mrmLogic';
 import { LocationPrayerTimesWidget } from './LocationPrayerTimesWidget';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
@@ -83,7 +84,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
           </span>
           <span className="text-[11px] text-slate-400 font-medium">
-            14 Rabi' al-Thani 1448 AH
+            {formatLiveHijriDate().full}
           </span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { LocationPrayerTimes } from '../types';
+import { formatLiveHijriDate } from '../utils/mrmLogic';
 
 export interface CalculationMethod {
   id: number;
@@ -60,6 +61,7 @@ export function getOfflineFallbackPrayerTimes(
 ): LocationPrayerTimes {
   const method = CALCULATION_METHODS.find(m => m.id === methodId) || CALCULATION_METHODS[0];
   const now = new Date();
+  const hijri = formatLiveHijriDate(now);
   
   return {
     locationName: city,
@@ -67,9 +69,9 @@ export function getOfflineFallbackPrayerTimes(
     latitude: lat,
     longitude: lng,
     dateStr: now.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-    hijriDateStr: '14 Rabi\' al-Thani 1448',
-    hijriYear: '1448',
-    hijriMonthEn: 'Rabi\' al-Thani',
+    hijriDateStr: hijri.full,
+    hijriYear: hijri.year,
+    hijriMonthEn: hijri.month,
     hijriMonthAr: 'رَبِيعُ الثَّانِي',
     timings: {
       Imsak: '05:38',
@@ -206,16 +208,18 @@ export interface NextPrayerInfo {
   nextPrayerTime: string;
   timeRemainingStr: string;
   minutesRemaining: number;
+  secondsRemaining?: number;
   progressPercent: number;
   arabicName: string;
 }
 
 /**
- * Calculate the next prayer and time remaining from timings
+ * Calculate the next prayer and time remaining from timings with exact real-time seconds ticking
  */
 export function getNextPrayerCalculation(timings: LocationPrayerTimes['timings']): NextPrayerInfo {
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const currentSec = now.getSeconds();
 
   const parseMinutes = (timeStr: string) => {
     if (!timeStr) return 0;
@@ -246,15 +250,25 @@ export function getNextPrayerCalculation(timings: LocationPrayerTimes['timings']
     minutesDiff = minutesUntilMidnight + next.minutes;
   }
 
-  // Format hours and minutes remaining
-  const hours = Math.floor(minutesDiff / 60);
-  const mins = minutesDiff % 60;
-  const timeRemainingStr = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  // Calculate total seconds remaining
+  let totalSecRemaining = Math.max(0, minutesDiff * 60 - currentSec);
+  const hours = Math.floor(totalSecRemaining / 3600);
+  const mins = Math.floor((totalSecRemaining % 3600) / 60);
+  const secs = totalSecRemaining % 60;
+
+  let timeRemainingStr = '';
+  if (hours > 0) {
+    timeRemainingStr = `${hours}h ${mins}m ${secs}s`;
+  } else if (mins > 0) {
+    timeRemainingStr = `${mins}m ${secs}s`;
+  } else {
+    timeRemainingStr = `${secs}s`;
+  }
 
   // Estimate interval percentage
-  const totalInterval = 180; // approximate average ~3 hours between prayers
-  const elapsed = Math.max(0, totalInterval - minutesDiff);
-  const progressPercent = Math.min(100, Math.max(5, Math.round((elapsed / totalInterval) * 100)));
+  const totalIntervalSec = 180 * 60; // 3 hours in seconds
+  const elapsedSec = Math.max(0, totalIntervalSec - totalSecRemaining);
+  const progressPercent = Math.min(100, Math.max(5, Math.round((elapsedSec / totalIntervalSec) * 100)));
 
   return {
     currentPrayerName: current.name,
@@ -262,6 +276,7 @@ export function getNextPrayerCalculation(timings: LocationPrayerTimes['timings']
     nextPrayerTime: next.time,
     timeRemainingStr,
     minutesRemaining: minutesDiff,
+    secondsRemaining: totalSecRemaining,
     progressPercent,
     arabicName: next.arabic,
   };

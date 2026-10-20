@@ -33,7 +33,7 @@ export const CheckoutPaymentScreen: React.FC<CheckoutPaymentScreenProps> = ({
       typeof window !== 'undefined' &&
       new URLSearchParams(window.location.search).get('state') === 'receipt'
   );
-  const [receiptSerial] = useState(() => `MRM-2026-TX-${849210}`);
+  const [receiptSerial] = useState(() => `MRM-${new Date().getFullYear()}-TX-${Math.floor(100000 + Math.random() * 900000)}`);
 
   const banks = [
     { name: 'Maybank2u', code: 'MBB', popular: true },
@@ -50,7 +50,56 @@ export const CheckoutPaymentScreen: React.FC<CheckoutPaymentScreenProps> = ({
     setTimeout(() => {
       setIsProcessing(false);
       setIsSuccess(true);
+      try {
+        const existing = JSON.parse(localStorage.getItem('mrm_donation_receipts') || '[]');
+        existing.unshift({
+          serial: receiptSerial,
+          date: new Date().toISOString(),
+          donorName,
+          donorIC,
+          donorEmail,
+          amount: totalAmount,
+          method,
+          bank: method === 'fpx' ? selectedBank : method,
+        });
+        localStorage.setItem('mrm_donation_receipts', JSON.stringify(existing));
+      } catch {}
     }, 1000);
+  };
+
+  const handleDownloadReceipt = () => {
+    playClickSound?.();
+    const content = [
+      '=====================================================',
+      'MULTIRACIAL REVERTED MUSLIMS (MRM)',
+      'OFFICIAL TAX-DEDUCTIBLE DONATION RECEIPT',
+      'Sub-Section 44(6) Income Tax Act 1967',
+      'LHDN Ref: 01/35/42/51/179 • PPM-022-14-11072014',
+      '=====================================================',
+      `Receipt Serial : ${receiptSerial}`,
+      `Date & Time    : ${new Date().toLocaleString()}`,
+      `Donor Name     : ${donorName}`,
+      `NRIC / Passport: ${donorIC}`,
+      `Email Address  : ${donorEmail}`,
+      `Channel        : ${method === 'fpx' ? `FPX Online (${selectedBank})` : method === 'duitnow' ? 'DuitNow QR Instant' : 'Debit/Credit Card'}`,
+      `Amount Paid    : RM ${totalAmount.toFixed(2)}`,
+      'Status         : COMPLETED & DISBURSED (VERIFIED)',
+      'Tax Status     : 100% Tax Deductible under LHDN Malaysia',
+      '=====================================================',
+      'Jazakallahu khairan katheera for supporting reverts and asnaf families.',
+      'MRM National HQ: Masjid Wilayah Hub, Jalan Tuanku Abdul Halim, KL.',
+      '====================================================='
+    ].join('\r\n');
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MRM-Tax-Receipt-${receiptSerial}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -121,6 +170,14 @@ export const CheckoutPaymentScreen: React.FC<CheckoutPaymentScreenProps> = ({
               <span>PDF Copy sent to {donorEmail}</span>
               <Receipt className="w-4 h-4 text-emerald-600" />
             </div>
+            <button
+              type="button"
+              onClick={handleDownloadReceipt}
+              className="w-full py-2.5 rounded-xl u-btn-secondary font-bold text-xs cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Download Official Tax Receipt (.txt)</span>
+            </button>
           </div>
 
           <div className="w-full flex gap-2">

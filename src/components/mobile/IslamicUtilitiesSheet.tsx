@@ -87,25 +87,53 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
   const [isFastingToday, setIsFastingToday] = useState<boolean>(true);
   const [fastingStreak, setFastingStreak] = useState<number>(8);
 
-  // 2. Salah & Amal Tracker State
-  const [completedFarz, setCompletedFarz] = useState<Record<string, boolean>>({
-    Subuh: true,
-    Zohor: true,
-    Asar: true,
-    Maghrib: false,
-    Isyak: false,
+  // 2. Salah & Amal Tracker State (Persisted)
+  const [completedFarz, setCompletedFarz] = useState<Record<string, boolean>>(() => {
+    try {
+      const s = localStorage.getItem('mrm_salah_farz');
+      if (s) return JSON.parse(s);
+    } catch {}
+    return {
+      Subuh: true,
+      Zohor: true,
+      Asar: true,
+      Maghrib: false,
+      Isyak: false,
+    };
   });
-  const [completedSunnah, setCompletedSunnah] = useState<Record<string, boolean>>({
-    Tahajjud: true,
-    Duha: true,
-    Rawatib: true,
-    Witr: false,
-    MorningAdhkar: true,
-    QuranTilawat: true,
-  });
-  const [qazaDebtCount, setQazaDebtCount] = useState<number>(4);
 
-  // 3. Qibla Compass State
+  const [completedSunnah, setCompletedSunnah] = useState<Record<string, boolean>>(() => {
+    try {
+      const s = localStorage.getItem('mrm_salah_sunnah');
+      if (s) return JSON.parse(s);
+    } catch {}
+    return {
+      Tahajjud: true,
+      Duha: true,
+      Rawatib: true,
+      Witr: false,
+      MorningAdhkar: true,
+      QuranTilawat: true,
+    };
+  });
+
+  const [qazaDebtCount, setQazaDebtCount] = useState<number>(() => {
+    try {
+      const s = localStorage.getItem('mrm_salah_qaza');
+      if (s) return Number(s);
+    } catch {}
+    return 4;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mrm_salah_farz', JSON.stringify(completedFarz));
+      localStorage.setItem('mrm_salah_sunnah', JSON.stringify(completedSunnah));
+      localStorage.setItem('mrm_salah_qaza', String(qazaDebtCount));
+    } catch {}
+  }, [completedFarz, completedSunnah, qazaDebtCount]);
+
+  // 3. Qibla Compass State with Real-Time Gyro / Magnetometer Orientation
   const baseSnapshot = getLocationSyncSnapshot(zone);
   const [deviceHeading, setDeviceHeading] = useState<number>(
     Math.round(baseSnapshot.qibla.bearingDegrees)
@@ -115,19 +143,82 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
     setDeviceHeading(Math.round(baseSnapshot.qibla.bearingDegrees));
   }, [baseSnapshot.zoneCode]);
 
+  useEffect(() => {
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      let heading: number | null = null;
+      if ((e as any).webkitCompassHeading) {
+        // iOS Safari native compass
+        heading = (e as any).webkitCompassHeading;
+      } else if (e.alpha !== null) {
+        // Android Chrome
+        heading = 360 - e.alpha;
+      }
+      if (heading !== null && !isNaN(heading)) {
+        setDeviceHeading(Math.round(heading));
+      }
+    };
+
+    if (typeof window !== 'undefined' && window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('deviceorientation', handleOrientation, true);
+      }
+    };
+  }, []);
+
   // 4. Tajweed Quran State
   const [selectedSurahNum, setSelectedSurahNum] = useState<number>(1);
   const [showTajweedColors, setShowTajweedColors] = useState<boolean>(true);
   const [translationLang, setTranslationLang] = useState<'en' | 'bm'>('en');
   const [selectedQari, setSelectedQari] = useState<string>('Mishary Rashid Alafasy');
   const [playingAyahKey, setPlayingAyahKey] = useState<string | null>(null);
-  const [bookmarkedAyat, setBookmarkedAyat] = useState<string[]>(['1:1', '1:5', '112:1']);
+  const [bookmarkedAyat, setBookmarkedAyat] = useState<string[]>(() => {
+    try {
+      const s = localStorage.getItem('mrm_bookmarked_ayat');
+      if (s) return JSON.parse(s);
+    } catch {}
+    return ['1:1', '1:5', '112:1'];
+  });
 
-  // 5. Tasbih State
+  useEffect(() => {
+    try {
+      localStorage.setItem('mrm_bookmarked_ayat', JSON.stringify(bookmarkedAyat));
+    } catch {}
+  }, [bookmarkedAyat]);
+
+  // 5. Tasbih State (Persisted with Haptic Feedback)
   const [dhikrIdx, setDhikrIdx] = useState<number>(0);
-  const [tasbihCount, setTasbihCount] = useState<number>(18);
-  const [tasbihLaps, setTasbihLaps] = useState<number>(2);
-  const [lifetimeDhikr, setLifetimeDhikr] = useState<number>(1420);
+  const [tasbihCount, setTasbihCount] = useState<number>(() => {
+    try {
+      const s = localStorage.getItem('mrm_tasbih_count');
+      if (s) return Number(s);
+    } catch {}
+    return 18;
+  });
+  const [tasbihLaps, setTasbihLaps] = useState<number>(() => {
+    try {
+      const s = localStorage.getItem('mrm_tasbih_laps');
+      if (s) return Number(s);
+    } catch {}
+    return 2;
+  });
+  const [lifetimeDhikr, setLifetimeDhikr] = useState<number>(() => {
+    try {
+      const s = localStorage.getItem('mrm_tasbih_lifetime');
+      if (s) return Number(s);
+    } catch {}
+    return 1420;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mrm_tasbih_count', String(tasbihCount));
+      localStorage.setItem('mrm_tasbih_laps', String(tasbihLaps));
+      localStorage.setItem('mrm_tasbih_lifetime', String(lifetimeDhikr));
+    } catch {}
+  }, [tasbihCount, tasbihLaps, lifetimeDhikr]);
 
   // 6. Dua State
   const [duaCategory, setDuaCategory] = useState<string>('All');
@@ -314,11 +405,21 @@ export const IslamicUtilitiesSheet: React.FC<IslamicUtilitiesSheetProps> = ({
 
   const handleTasbihTap = () => {
     playClickSound?.(880);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(25);
+      } catch {}
+    }
     setLifetimeDhikr((prev) => prev + 1);
     setTasbihCount((prev) => {
       const next = prev + 1;
       if (next >= currentDhikr.targetCount) {
         setTasbihLaps((l) => l + 1);
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          try {
+            navigator.vibrate([40, 60, 40]);
+          } catch {}
+        }
         return 0;
       }
       return next;

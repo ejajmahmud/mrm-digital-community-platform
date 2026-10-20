@@ -53,7 +53,7 @@ export const LocationPrayerTimesWidget: React.FC<LocationPrayerTimesWidgetProps>
   useEffect(() => {
     const interval = setInterval(() => {
       setNextInfo(getNextPrayerCalculation(prayerData.timings));
-    }, 30000);
+    }, 1000);
     return () => clearInterval(interval);
   }, [prayerData]);
 

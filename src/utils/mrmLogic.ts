@@ -498,33 +498,56 @@ export interface NextPrayerInfo {
 }
 
 export function getNextPrayerInfo(
-  currentMinutesFromMidnight: number,
-  prayers: PrayerScheduleItem[] = JAKIM_WLY01_PRAYERS
+  currentMinutesFromMidnight?: number,
+  prayers: PrayerScheduleItem[] = JAKIM_WLY01_PRAYERS,
+  customSecondsFromMidnight?: number
 ): NextPrayerInfo {
-  const normalizedMinutes = ((currentMinutesFromMidnight % 1440) + 1440) % 1440;
+  let minutes = currentMinutesFromMidnight;
+  let seconds = customSecondsFromMidnight;
+  if (minutes === undefined) {
+    const now = new Date();
+    minutes = now.getHours() * 60 + now.getMinutes();
+    seconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  }
+  const normalizedMinutes = ((minutes % 1440) + 1440) % 1440;
   const upcoming = prayers.find((p) => p.minutesFromMidnight > normalizedMinutes);
 
+  const calculateCountdown = (prayerMinutes: number) => {
+    let diffSec: number;
+    if (seconds !== undefined) {
+      const prayerSec = prayerMinutes * 60;
+      const curSec = ((seconds % 86400) + 86400) % 86400;
+      diffSec = prayerSec > curSec ? prayerSec - curSec : (86400 - curSec) + prayerSec;
+    } else {
+      const diffMin = prayerMinutes > normalizedMinutes ? prayerMinutes - normalizedMinutes : (1440 - normalizedMinutes) + prayerMinutes;
+      diffSec = diffMin * 60;
+    }
+    const hrs = Math.floor(diffSec / 3600);
+    const mins = Math.floor((diffSec % 3600) / 60);
+    const secs = diffSec % 60;
+    let label = '';
+    if (hrs > 0) label = `${hrs}h ${mins}m ${secs}s`;
+    else if (mins > 0) label = `${mins}m ${secs}s`;
+    else label = `${secs}s`;
+    return { diffMin: Math.ceil(diffSec / 60), label };
+  };
+
   if (upcoming) {
-    const diff = upcoming.minutesFromMidnight - normalizedMinutes;
-    const hrs = Math.floor(diff / 60);
-    const mins = diff % 60;
-    const countdownLabel = hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`;
+    const { diffMin, label } = calculateCountdown(upcoming.minutesFromMidnight);
     return {
       nextPrayer: upcoming,
-      minutesRemaining: diff,
-      countdownLabel,
+      minutesRemaining: diffMin,
+      countdownLabel: label,
     };
   }
 
   // Wrap around to next day's Subuh
   const firstPrayer = prayers[0];
-  const diff = 1440 - normalizedMinutes + firstPrayer.minutesFromMidnight;
-  const hrs = Math.floor(diff / 60);
-  const mins = diff % 60;
+  const { diffMin, label } = calculateCountdown(firstPrayer.minutesFromMidnight);
   return {
     nextPrayer: firstPrayer,
-    minutesRemaining: diff,
-    countdownLabel: hrs > 0 ? `${hrs}h ${mins}m` : `${mins} mins`,
+    minutesRemaining: diffMin,
+    countdownLabel: label,
   };
 }
 
@@ -664,8 +687,9 @@ export interface LocationSyncSnapshot {
 
 export function getLocationSyncSnapshot(
   zoneInput: string = 'WLY01',
-  customMinutesFromMidnight: number = 15 * 60 + 46,
-  customCoords?: { lat: number; lng: number }
+  customMinutesFromMidnight?: number,
+  customCoords?: { lat: number; lng: number },
+  customSecondsFromMidnight?: number
 ): LocationSyncSnapshot {
   const resolvedZone = customCoords
     ? findNearestLocationZone(customCoords.lat, customCoords.lng).zone
@@ -676,7 +700,7 @@ export function getLocationSyncSnapshot(
 
   const prayers = getPrayersForZone(resolvedZone.code);
   const almanac = getWaqtAndForbiddenSchedule(resolvedZone.code, prayers);
-  const nextPrayerInfo = getNextPrayerInfo(customMinutesFromMidnight, prayers);
+  const nextPrayerInfo = getNextPrayerInfo(customMinutesFromMidnight, prayers, customSecondsFromMidnight);
   const qibla = calculateQiblaAndDistance(activeLat, activeLng);
   const nearbyFacilities = getNearbyMrmFacilities(activeLat, activeLng);
 
@@ -861,4 +885,122 @@ export function calculateZakatObligation(
     annualZakat,
     monthlyZakat,
   };
+}
+
+export function formatLiveHijriDate(date: Date = new Date()): { full: string; day: number; month: string; year: string } {
+  try {
+    const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }).formatToParts(date);
+    const d = parts.find(p => p.type === 'day')?.value || '1';
+    const m = parts.find(p => p.type === 'month')?.value || "Rabi' al-Thani";
+    const y = parts.find(p => p.type === 'year')?.value || '1448';
+    return {
+      full: `${d} ${m} ${y} AH`,
+      day: parseInt(d, 10),
+      month: m,
+      year: `${y} AH`
+    };
+  } catch {
+    return { full: "14 Rabi' al-Thani 1448 AH", day: 14, month: "Rabi' al-Thani", year: "1448 AH" };
+  }
+}
+
+export interface DynamicMonthInfo {
+  year: number;
+  monthIndex: number;
+  gregorianMonth: string;
+  shortMonth: string;
+  daysCount: number;
+  startWeekdayOffset: number;
+  clampedDay: number;
+  hijriDay: number;
+  hijriMonth: string;
+  hijriYear: string;
+  hijriDateLabel: string;
+  isEventDay: boolean;
+  isSunnahFastDay: boolean;
+  isAyyamAlBeedh: boolean;
+  isToday: boolean;
+}
+
+export function getDynamicCalendarMonth(year: number, month: number, day: number): DynamicMonthInfo {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const clampedDay = Math.max(1, Math.min(daysInMonth, day));
+  const firstDayWeekday = (new Date(year, month, 1).getDay() + 6) % 7; // 0 = Mon, 6 = Sun
+  
+  const targetDate = new Date(year, month, clampedDay);
+  const hijri = formatLiveHijriDate(targetDate);
+
+  const dayOfWeek = targetDate.getDay();
+  const isSunnahFastDay = (dayOfWeek === 1 || dayOfWeek === 4) || [13, 14, 15].includes(hijri.day);
+  const isAyyamAlBeedh = [13, 14, 15].includes(hijri.day);
+  const isEventDay = (clampedDay % 4 === 0) || (dayOfWeek === 5);
+
+  const now = new Date();
+  const isToday = now.getFullYear() === year && now.getMonth() === month && now.getDate() === clampedDay;
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  return {
+    year,
+    monthIndex: month,
+    gregorianMonth: monthNames[month],
+    shortMonth: monthNames[month].slice(0, 3),
+    daysCount: daysInMonth,
+    startWeekdayOffset: firstDayWeekday,
+    clampedDay,
+    hijriDay: hijri.day,
+    hijriMonth: hijri.month,
+    hijriYear: hijri.year,
+    hijriDateLabel: hijri.full,
+    isEventDay,
+    isSunnahFastDay,
+    isAyyamAlBeedh,
+    isToday,
+  };
+}
+
+export function generateICalendarBooking(booking: {
+  title: string;
+  role: string;
+  location: string;
+  dateStr: string; // YYYY-MM-DD
+  slot: string;
+}): string {
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const dtStamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}00Z`;
+  
+  const cleanDate = booking.dateStr.replace(/-/g, '');
+  let startH = 9, startM = 0, endH = 12, endM = 0;
+  if (booking.slot.includes('02:00')) { startH = 14; endH = 17; }
+  else if (booking.slot.includes('07:30')) { startH = 19; startM = 30; endH = 21; endM = 30; }
+
+  const dtStart = `${cleanDate}T${pad(startH)}${pad(startM)}00`;
+  const dtEnd = `${cleanDate}T${pad(endH)}${pad(endM)}00`;
+
+  return [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//MRM Care//Digital Community Platform//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    `UID:mrm-${Date.now()}@mrm.org.my`,
+    `DTSTAMP:${dtStamp}`,
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:MRM Care: ${booking.title} (${booking.role})`,
+    `DESCRIPTION:Confirmed duty shift with Multiracial Reverted Muslims (MRM).\nSlot: ${booking.slot}\nLocation: ${booking.location}`,
+    `LOCATION:${booking.location}`,
+    'STATUS:CONFIRMED',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
 }

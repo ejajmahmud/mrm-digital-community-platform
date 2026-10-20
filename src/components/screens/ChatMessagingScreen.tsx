@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Send,
   Paperclip,
@@ -9,6 +9,7 @@ import {
   CheckCheck,
   ShieldCheck,
   Lock,
+  Trash2,
 } from 'lucide-react';
 import { ScreenId } from '../../types/screens';
 import { ASSETS } from '../../data/assets';
@@ -24,69 +25,165 @@ interface Message {
 
 interface ChatMessagingScreenProps {
   onNavigate: (screen: ScreenId) => void;
-  playClickSound?: () => void;
+  playClickSound?: (freq?: number) => void;
 }
+
+const DEFAULT_MESSAGES: Message[] = [
+  {
+    id: 'm-1',
+    sender: 'coordinator',
+    text: 'Assalamu alaikum. Welcome to MRM Care Services. I am Ustaz Ridzwan, your assigned caseworker.',
+    time: '14:20',
+  },
+  {
+    id: 'm-2',
+    sender: 'coordinator',
+    isAudio: true,
+    audioDuration: '0:24',
+    time: '14:22',
+  },
+  {
+    id: 'm-3',
+    sender: 'me',
+    text: 'Wa alaikumussalam Ustaz. Brother Hisham is already en route with the emergency food box. ETA 15 mins.',
+    time: '14:25',
+  },
+  {
+    id: 'm-4',
+    sender: 'coordinator',
+    text: 'Alhamdulillah, excellent coordination. Please let me know once delivery confirmation is signed.',
+    time: '14:28',
+  },
+];
 
 export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
   playClickSound,
 }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'm-1',
-      sender: 'coordinator',
-      text: 'Assalamu alaikum. Welcome to MRM Care Services. I am Ustaz Ridzwan, your assigned caseworker.',
-      time: '14:20',
-    },
-    {
-      id: 'm-2',
-      sender: 'coordinator',
-      isAudio: true,
-      audioDuration: '0:24',
-      time: '14:22',
-    },
-    {
-      id: 'm-3',
-      sender: 'me',
-      text: 'Wa alaikumussalam Ustaz. Brother Hisham is already en route with the emergency food box. ETA 15 mins.',
-      time: '14:25',
-    },
-    {
-      id: 'm-4',
-      sender: 'coordinator',
-      text: 'Alhamdulillah, excellent coordination. Please let me know once delivery confirmation is signed.',
-      time: '14:28',
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    try {
+      const saved = localStorage.getItem('mrm_chat_messages');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return DEFAULT_MESSAGES;
+  });
 
   const [inputMessage, setInputMessage] = useState('');
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [audioPlaybackSec, setAudioPlaybackSec] = useState(0);
+  const audioTimerRef = useRef<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mrm_chat_messages', JSON.stringify(messages));
+    } catch {}
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Audio simulation with Web Audio
+  const playAudioVoiceNote = () => {
+    if (isPlayingAudio) {
+      clearInterval(audioTimerRef.current);
+      setIsPlayingAudio(false);
+      setAudioPlaybackSec(0);
+      return;
+    }
+
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(520, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.04, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+      osc.start();
+      osc.stop(ctx.currentTime + 1.2);
+    } catch {}
+
+    setIsPlayingAudio(true);
+    setAudioPlaybackSec(0);
+    audioTimerRef.current = setInterval(() => {
+      setAudioPlaybackSec((prev) => {
+        if (prev >= 24) {
+          clearInterval(audioTimerRef.current);
+          setIsPlayingAudio(false);
+          return 0;
+        }
+        return prev + 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (audioTimerRef.current) clearInterval(audioTimerRef.current);
+    };
+  }, []);
+
+  const getSmartReply = (userText: string): string => {
+    const lower = userText.toLowerCase();
+    if (lower.includes('food') || lower.includes('box') || lower.includes('aid') || lower.includes('hamper')) {
+      return 'Alhamdulillah. The pantry dispatch log has recorded this. Please take a quick photo of the beneficiary handover if permitted.';
+    }
+    if (lower.includes('zakat') || lower.includes('fitrah') || lower.includes('fidyah')) {
+      return 'Barakallahu feekum. Our Shariah welfare audit desk will review the asnaf qualification and issue the official LHDN tax voucher.';
+    }
+    if (lower.includes('mentor') || lower.includes('revert') || lower.includes('halaqa') || lower.includes('class')) {
+      return 'MashaAllah. We have paired you with our senior mentor squad at Masjid Wilayah. Would 3:00 PM Saturday suit for the intake session?';
+    }
+    if (lower.includes('salam') || lower.includes('assalam')) {
+      return 'Wa alaikumussalam wa rahmatullah. How can the MRM Care pastoral desk assist you today brother/sister?';
+    }
+    if (lower.includes('arrived') || lower.includes('here') || lower.includes('location')) {
+      return 'Noted on your arrival. Kindly check in with Brother Faisal at the reception desk to receive your field kit.';
+    }
+    return 'Jazakallahu khair for the prompt update! The MRM welfare ledger has been updated and your coordinator is on standby.';
+  };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMessage.trim()) return;
-    playClickSound?.();
+    playClickSound?.(750);
+
+    const currentTimeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const userText = inputMessage.trim();
 
     const newMsg: Message = {
       id: `m-${Date.now()}`,
       sender: 'me',
-      text: inputMessage,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: userText,
+      time: currentTimeStr,
     };
 
     setMessages((prev) => [...prev, newMsg]);
     setInputMessage('');
 
+    // Contextual auto-reply from caseworker
     setTimeout(() => {
+      playClickSound?.(880);
+      const replyText = getSmartReply(userText);
       setMessages((prev) => [
         ...prev,
         {
           id: `m-reply-${Date.now()}`,
           sender: 'coordinator',
-          text: 'Jazakallahu khair for the prompt update! The MRM welfare ledger has been updated.',
+          text: replyText,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         },
       ]);
-    }, 900);
+    }, 1100);
+  };
+
+  const handleClearChat = () => {
+    playClickSound?.(400);
+    if (confirm('Clear chat history and reset to welcome messages?')) {
+      setMessages(DEFAULT_MESSAGES);
+      localStorage.removeItem('mrm_chat_messages');
+    }
   };
 
   return (
@@ -113,14 +210,24 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => playClickSound?.()}
-          className="px-3 py-1.5 rounded-xl u-btn-secondary text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-        >
-          <Phone className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Call</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleClearChat}
+            title="Reset conversation"
+            className="p-2 rounded-xl text-slate-400 hover:text-rose-600 cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => playClickSound?.()}
+            className="px-3 py-1.5 rounded-xl u-btn-secondary text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+          >
+            <Phone className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Call</span>
+          </button>
+        </div>
       </div>
 
       {/* Messages Scroll Area */}
@@ -149,10 +256,7 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
                   <div className="flex items-center gap-3 pr-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        playClickSound?.();
-                        setIsPlayingAudio(!isPlayingAudio);
-                      }}
+                      onClick={playAudioVoiceNote}
                       className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center cursor-pointer shrink-0"
                     >
                       {isPlayingAudio ? (
@@ -178,7 +282,7 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
                         )}
                       </div>
                       <span className="text-[10px] text-slate-500 font-mono block">
-                        Voice Note • {msg.audioDuration}
+                        Voice Note • {isPlayingAudio ? `0:${audioPlaybackSec.toString().padStart(2, '0')}` : msg.audioDuration}
                       </span>
                     </div>
                   </div>
@@ -198,6 +302,7 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
             </div>
           );
         })}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Quick Reply Chips */}
@@ -206,6 +311,7 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
           'Aid delivery completed safely.',
           'Requesting 1-on-1 revert mentor call.',
           'Arrived at Masjid Wilayah Hub.',
+          'Zakat eligibility consultation query.',
         ].map((chip) => (
           <button
             key={chip}
@@ -228,7 +334,10 @@ export const ChatMessagingScreen: React.FC<ChatMessagingScreenProps> = ({
       >
         <button
           type="button"
-          onClick={() => playClickSound?.()}
+          onClick={() => {
+            playClickSound?.();
+            setInputMessage('Attached: Field handover receipt confirmation.');
+          }}
           className="w-9 h-9 rounded-xl u-btn-secondary flex items-center justify-center cursor-pointer shrink-0"
           aria-label="Attach file"
         >

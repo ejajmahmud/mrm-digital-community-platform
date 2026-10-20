@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -11,12 +11,14 @@ import {
   Trash2,
   ShieldAlert,
   Sparkles,
+  Download,
 } from 'lucide-react';
 import { ScreenId } from '../../types/screens';
 import {
-  MRM_CALENDAR_MONTHS,
-  getCalendarMonthInfo,
+  getDynamicCalendarMonth,
+  generateICalendarBooking,
   getLocationSyncSnapshot,
+  formatLiveHijriDate,
 } from '../../utils/mrmLogic';
 import { UtilityTabId } from '../../data/islamicUtilitiesData';
 
@@ -31,6 +33,7 @@ interface CalendarBookingScreenProps {
 interface ConfirmedBooking {
   id: string;
   dateLabel: string;
+  isoDate: string; // YYYY-MM-DD
   hijriLabel: string;
   slot: string;
   track: string;
@@ -51,10 +54,16 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
     }
     return 'shifts';
   });
-  const [monthIndex, setMonthIndex] = useState(1); // Default: October 2026
-  const [selectedDay, setSelectedDay] = useState(19);
+
+  // Dynamic Date tracking initialized to current user date
+  const now = new Date();
+  const [currentYear, setCurrentYear] = useState(() => now.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(() => now.getMonth());
+  const [selectedDay, setSelectedDay] = useState(() => now.getDate());
+
   const [selectedSlot, setSelectedSlot] = useState('09:00 AM - 12:00 PM');
   const [selectedRole, setSelectedRole] = useState('Revert Mentorship & Halaqa');
+  const [lastConfirmedBooking, setLastConfirmedBooking] = useState<ConfirmedBooking | null>(null);
   const [showModal, setShowModal] = useState(
     () =>
       typeof window !== 'undefined' &&
@@ -64,53 +73,76 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
   const locationSnap = getLocationSyncSnapshot(selectedZone);
   const almanac = locationSnap.almanac;
 
-  const [bookings, setBookings] = useState<ConfirmedBooking[]>([
-    {
-      id: 'bk-initial',
-      dateLabel: 'Oct 16, 2026',
-      hijriLabel: "4 Rabi' al-Thani 1448H",
-      slot: '09:00 AM - 12:00 PM',
-      track: 'Revert Mentorship & Halaqa',
-      location: 'Masjid Wilayah Persekutuan Hub',
-    },
-  ]);
+  // Bookings persisted in localStorage
+  const [bookings, setBookings] = useState<ConfirmedBooking[]>(() => {
+    try {
+      const saved = localStorage.getItem('mrm_calendar_bookings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
 
-  const { meta, clampedDay, hijriDateLabel, isEventDay, isSunnahFastDay, isAyyamAlBeedh } =
-    getCalendarMonthInfo(monthIndex, selectedDay);
+    const todayHijri = formatLiveHijriDate(now);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return [
+      {
+        id: 'bk-initial-1',
+        dateLabel: `${now.toLocaleString('en-US', { month: 'short' })} ${now.getDate()}, ${now.getFullYear()}`,
+        isoDate: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+        hijriLabel: todayHijri.full,
+        slot: '09:00 AM - 12:00 PM',
+        track: 'Revert Mentorship & Halaqa',
+        location: 'Masjid Wilayah Persekutuan Hub',
+      },
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('mrm_calendar_bookings', JSON.stringify(bookings));
+    } catch {}
+  }, [bookings]);
+
+  // Dynamic calendar month calculation
+  const meta = getDynamicCalendarMonth(currentYear, currentMonth, selectedDay);
+  const clampedDay = meta.clampedDay;
 
   const daysInMonth = Array.from({ length: meta.daysCount }, (_, i) => i + 1);
   const emptyLeadingCells = Array.from({ length: meta.startWeekdayOffset }, (_, i) => i);
 
   const handlePrevMonth = () => {
     playClickSound?.();
-    setMonthIndex((prev) => {
-      const nextIdx = Math.max(0, prev - 1);
-      const nextMeta = MRM_CALENDAR_MONTHS[nextIdx];
-      setSelectedDay((d) => Math.min(d, nextMeta.daysCount));
-      return nextIdx;
-    });
+    if (currentMonth === 0) {
+      setCurrentYear((y) => y - 1);
+      setCurrentMonth(11);
+    } else {
+      setCurrentMonth((m) => m - 1);
+    }
   };
 
   const handleNextMonth = () => {
     playClickSound?.();
-    setMonthIndex((prev) => {
-      const nextIdx = Math.min(MRM_CALENDAR_MONTHS.length - 1, prev + 1);
-      const nextMeta = MRM_CALENDAR_MONTHS[nextIdx];
-      setSelectedDay((d) => Math.min(d, nextMeta.daysCount));
-      return nextIdx;
-    });
+    if (currentMonth === 11) {
+      setCurrentYear((y) => y + 1);
+      setCurrentMonth(0);
+    } else {
+      setCurrentMonth((m) => m + 1);
+    }
   };
 
   const handleJumpToday = () => {
     playClickSound?.();
-    setMonthIndex(1);
-    setSelectedDay(19);
+    const t = new Date();
+    setCurrentYear(t.getFullYear());
+    setCurrentMonth(t.getMonth());
+    setSelectedDay(t.getDate());
   };
+
+  const todayDateObj = new Date();
+  const todayLabel = `Today (${todayDateObj.toLocaleString('en-US', { month: 'short' })} ${todayDateObj.getDate()})`;
 
   const slots = [
     {
       time: '09:00 AM - 12:00 PM',
-      label: isEventDay ? 'Special Revert Halaqa & Welfare Shift' : 'Morning Halaqa & Shift',
+      label: meta.isEventDay ? 'Special Revert Halaqa & Welfare Shift' : 'Morning Halaqa & Shift',
       spots: `${(clampedDay % 4) + 2} slots left`,
     },
     {
@@ -127,14 +159,18 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
 
   const handleBooking = () => {
     playClickSound?.();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const isoDate = `${meta.year}-${pad(meta.monthIndex + 1)}-${pad(clampedDay)}`;
     const newBooking: ConfirmedBooking = {
       id: `bk-${Date.now()}`,
       dateLabel: `${meta.shortMonth} ${clampedDay}, ${meta.year}`,
-      hijriLabel: hijriDateLabel,
+      isoDate,
+      hijriLabel: meta.hijriDateLabel,
       slot: selectedSlot,
       track: selectedRole,
       location: locationSnap.hubName,
     };
+    setLastConfirmedBooking(newBooking);
     setBookings((prev) => [newBooking, ...prev]);
     setShowModal(true);
   };
@@ -142,6 +178,26 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
   const handleCancelBooking = (id: string) => {
     playClickSound?.();
     setBookings((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  const handleExportICalendar = (bk: ConfirmedBooking) => {
+    playClickSound?.();
+    const ics = generateICalendarBooking({
+      title: bk.track,
+      role: bk.track,
+      location: bk.location,
+      dateStr: bk.isoDate,
+      slot: bk.slot,
+    });
+    const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `MRM-${bk.track.replace(/\s+/g, '_')}-${bk.isoDate}.ics`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -189,11 +245,11 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
               {locationSnap.hubName} ({locationSnap.zoneCode})
             </span>
             <span className="text-[11px] text-emerald-600 font-mono font-semibold block truncate">
-              {isAyyamAlBeedh
+              {meta.isAyyamAlBeedh
                 ? `★ Ayyam al-Beedh · Sehri ${almanac.sehriEnds24} · Iftar ${almanac.iftarMaghrib24}`
-                : isSunnahFastDay
+                : meta.isSunnahFastDay
                 ? `★ Sunnah Fast · Sehri ${almanac.sehriEnds24} · Iftar ${almanac.iftarMaghrib24}`
-                : `${hijriDateLabel} · Sehri ${almanac.sehriEnds24} · Iftar ${almanac.iftarMaghrib24}`}
+                : `${meta.hijriDateLabel} · Sehri ${almanac.sehriEnds24} · Iftar ${almanac.iftarMaghrib24}`}
             </span>
           </div>
         </div>
@@ -202,7 +258,7 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
           onClick={handleJumpToday}
           className="px-2.5 py-1.5 rounded-lg u-btn-secondary text-[11px] font-semibold shrink-0 cursor-pointer"
         >
-          Today (Oct 19)
+          {todayLabel}
         </button>
       </div>
 
@@ -226,21 +282,19 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
             <button
               type="button"
               onClick={handlePrevMonth}
-              disabled={monthIndex === 0}
               aria-label="Previous Month"
-              className="w-8 h-8 rounded-xl u-btn-secondary flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-8 h-8 rounded-xl u-btn-secondary flex items-center justify-center cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <span className="text-[11px] font-mono font-semibold px-2 py-1 rounded-lg u-subtle">
-              {monthIndex + 1}/{MRM_CALENDAR_MONTHS.length}
+              {meta.shortMonth} {meta.year}
             </span>
             <button
               type="button"
               onClick={handleNextMonth}
-              disabled={monthIndex === MRM_CALENDAR_MONTHS.length - 1}
               aria-label="Next Month"
-              className="w-8 h-8 rounded-xl u-btn-secondary flex items-center justify-center cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-8 h-8 rounded-xl u-btn-secondary flex items-center justify-center cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -265,8 +319,9 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
           ))}
           {daysInMonth.map((day) => {
             const isSelected = clampedDay === day;
-            const hasEvent = meta.eventDays.includes(day);
-            const hasSunnahFast = meta.sunnahFastDays.includes(day);
+            const dayMeta = getDynamicCalendarMonth(currentYear, currentMonth, day);
+            const hasEvent = dayMeta.isEventDay;
+            const hasSunnahFast = dayMeta.isSunnahFastDay;
 
             return (
               <button
@@ -386,7 +441,7 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
                 Available Slots ({meta.shortMonth} {clampedDay}, {meta.year})
               </span>
               <span className="text-[11px] text-emerald-600 font-semibold font-mono">
-                {isEventDay ? '★ Featured Halaqa Day' : 'Regular Schedule'}
+                {meta.isEventDay ? '★ Featured Halaqa Day' : 'Regular Schedule'}
               </span>
             </div>
 
@@ -500,15 +555,26 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
                         {bk.slot} · {bk.location}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCancelBooking(bk.id)}
-                      className="p-2 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer shrink-0"
-                      title="Cancel booking"
-                      aria-label="Cancel booking"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleExportICalendar(bk)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer"
+                        title="Add to Phone Calendar (.ics)"
+                        aria-label="Add to Phone Calendar"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCancelBooking(bk.id)}
+                        className="p-2 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+                        title="Cancel booking"
+                        aria-label="Cancel booking"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -536,6 +602,18 @@ export const CalendarBookingScreen: React.FC<CalendarBookingScreenProps> = ({
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>Coordinator: Ustaz Ridzwan ({locationSnap.cityLabel} Ops)</span>
             </div>
+
+            {lastConfirmedBooking && (
+              <button
+                type="button"
+                onClick={() => handleExportICalendar(lastConfirmedBooking)}
+                className="w-full py-2.5 rounded-xl u-btn-secondary text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Add to Phone Calendar (.ics)</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setShowModal(false)}
